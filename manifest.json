@@ -1,0 +1,13 @@
+{
+  "name": "Gym Tracker",
+  "short_name": "Gym Tracker",
+  "description": "Persönlicher Trainings-Tracker für progressive Überlastung",
+  "lang": "de",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0a0e14",
+  "theme_color": "#0a0e14",
+  "icons": [
+    { "src": "icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
