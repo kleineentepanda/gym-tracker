@@ -484,7 +484,8 @@
     border-color: rgba(79, 216, 255, 0.45);
     background: rgba(79, 216, 255, 0.09);
   }
-  .set-rpe { font-size: 15px !important; }
+  /* Nie unter 16px – sonst zoomt iOS beim Antippen in das Feld hinein */
+  .set-rpe { font-size: 16px !important; }
   .set-x { color: var(--muted); text-align: center; font-size: 13px; }
   .set-check {
     background: none;
@@ -625,7 +626,6 @@
     cursor: pointer;
   }
   .rest-btns button:active { background: rgba(79, 216, 255, 0.2); }
-  body.has-rest nav { box-shadow: none; }
 
   /* ---------- Aktionsblatt & Formularzeilen ---------- */
   .sheet-btn {
@@ -1170,6 +1170,9 @@ const SAFETY_KEY = "gymtracker-v1-pre-v2";   // unangetastete Kopie vor der erst
 const DATA_VERSION = 2;
 const TPL_COLORS = ["#4fd8ff", "#8b5cff", "#ffcc55", "#ff6ec7", "#45e6a0", "#ff9a4f"];
 
+let loadError = null;    // Rettungs-Schlüssel, falls die Daten beim Start unlesbar waren
+let saveFailed = false;
+
 let state = load();
 
 // Migration: ausschließlich additiv. Es wird nie ein Feld gelöscht oder überschrieben,
@@ -1204,9 +1207,10 @@ function migrate(data) {
 }
 
 function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
+  let raw = null;
+  try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { /* kein Speicher verfügbar */ }
+  if (raw) {
+    try {
       const data = JSON.parse(raw);
       // Sicherheitsnetz: einmalig den Stand vor der Migration wegsichern
       if (!data.version && !localStorage.getItem(SAFETY_KEY)) {
@@ -1218,13 +1222,27 @@ function load() {
       if (data.active) (data.active.entries || []).forEach(e => used.add(e.exerciseId));
       data.exercises = (data.exercises || []).filter(e => !/^ex\d+$/.test(e.id) || used.has(e.id));
       return migrate(data);
+    } catch (e) {
+      // Beschädigte Daten: NICHT einfach leer weitermachen, sonst überschreibt der
+      // nächste Speichervorgang alles. Rohtext wegsichern und Bescheid geben.
+      loadError = "gymtracker-v1-defekt-" + Date.now();
+      try { localStorage.setItem(loadError, raw); } catch (e2) { loadError = "(konnte nicht gesichert werden)"; }
     }
-  } catch (e) { /* beschädigte Daten → neu anfangen */ }
+  }
   return migrate({ exercises: [], workouts: [], templates: [], active: null });
 }
 
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    saveFailed = false;
+  } catch (e) {
+    // Speicher voll oder gesperrt (z. B. privater Modus) – einmal warnen, nicht bei jedem Satz
+    if (!saveFailed) {
+      saveFailed = true;
+      showAlert("Achtung: Die letzten Eingaben konnten nicht gespeichert werden – der Speicher ist voll. Lösche ein paar Übungsfotos oder alte Trainings und sichere danach deine Daten.");
+    }
+  }
 }
 
 function uid() {
@@ -1359,6 +1377,25 @@ function fmtNum(n) {
 
 function fmtCount(n, one, many) {
   return `${n} ${n === 1 ? one : many}`;
+}
+
+// Eine Zeile, die eine gespeicherte Einheit beschreibt – je nach Art unterschiedlich.
+// Wird auf der Startseite und im Verlauf gleichermaßen benutzt.
+function workoutMeta(w) {
+  const kind = kindOf(w);
+  if (kind === "cardio") {
+    // Bei Cardio sind die eingetragenen Minuten die Wahrheit, nicht die Zeitspanne
+    const c = w.cardio || {};
+    return [c.activity, c.minutes ? c.minutes + " Min." : fmtDuration(w.end - w.start),
+            c.distance ? fmtNum(c.distance) + " km" : null, c.intensity]
+      .filter(Boolean).join(" · ");
+  }
+  if (kind === "mobility") {
+    const secs = (w.entries || []).reduce((n, e) => n + (e.seconds || 0), 0);
+    return `${fmtCount(w.entries.length, "Übung", "Übungen")} · ${Math.round(secs / 60)} Min. gedehnt · ${fmtDuration(w.end - w.start)}`;
+  }
+  const sets = w.entries.reduce((n, e) => n + workSets(e.sets).length, 0);
+  return `${fmtCount(w.entries.length, "Übung", "Übungen")} · ${fmtCount(sets, "Satz", "Sätze")} · ${fmtDuration(w.end - w.start)}`;
 }
 
 function escapeHtml(str) {
@@ -1790,22 +1827,21 @@ function viewHome() {
           <div class="tpl-bar" style="color:${tplColor(t)}"></div>
           <div style="flex:1;min-width:0">
             <div class="tpl-row-name">${KIND_META[t.kind || "strength"].icon} ${escapeHtml(t.name)}</div>
-            <div class="tpl-row-sub">${t.kind === "cardio"
+            <div class="tpl-row-sub">${escapeHtml(t.kind === "cardio"
               ? `${(t.cardio || {}).activity || "Cardio"} · ${(t.cardio || {}).minutes || 30} Min.`
-              : fmtCount(t.exerciseIds.length, "Übung", "Übungen")}</div>
+              : fmtCount(t.exerciseIds.length, "Übung", "Übungen"))}</div>
           </div>
           <span class="pd-chevron">▶</span>
         </div>`).join("")}
-    </div>
-    ${p.tpl || p.rest ? "" : ""}` : "";
+    </div>` : "";
 
   const recent = [...state.workouts].sort((a, b) => b.start - a.start).slice(0, 3);
   const recentHtml = recent.length ? `
     <div class="sys-h" style="margin:22px 0 8px">Letzte Einheiten</div>` +
     recent.map(w => `
       <div class="card" style="padding:12px 16px">
-        <div class="history-date">${fmtDate(w.start)}</div>
-        <div class="history-meta">${fmtCount(w.entries.length, "Übung", "Übungen")} · ${fmtDuration(w.end - w.start)}</div>
+        <div class="history-date">${KIND_META[kindOf(w)].icon} ${fmtDate(w.start)}</div>
+        <div class="history-meta">${workoutMeta(w)}</div>
       </div>`).join("") : `
     <div class="empty-state">
       <div class="big">💪</div>
@@ -1855,9 +1891,9 @@ function viewPlan() {
       <div class="tpl-bar" style="color:${tplColor(t)}"></div>
       <div style="flex:1;min-width:0">
         <div class="tpl-row-name">${KIND_META[t.kind || "strength"].icon} ${escapeHtml(t.name)}</div>
-        <div class="tpl-row-sub">${t.kind === "cardio"
+        <div class="tpl-row-sub">${escapeHtml(t.kind === "cardio"
           ? `${(t.cardio || {}).activity || "Cardio"} · ${(t.cardio || {}).minutes || 30} Min.`
-          : `${fmtCount(t.exerciseIds.length, "Übung", "Übungen")} · ${t.exerciseIds.map(exName).join(", ") || "noch leer"}`}</div>
+          : `${fmtCount(t.exerciseIds.length, "Übung", "Übungen")} · ${t.exerciseIds.map(exName).join(", ") || "noch leer"}`)}</div>
       </div>
       <span class="pd-chevron">›</span>
     </div>`).join("") : `<div class="empty-state" style="padding:20px 8px">Noch keine Trainingstage.<br>Leg unten deinen ersten an.</div>`;
@@ -2039,7 +2075,7 @@ async function applyPreset(key) {
   names.forEach(n => {
     let t = (state.templates || []).find(x => x.name.toLowerCase() === n.toLowerCase());
     if (!t) {
-      t = { id: uid(), name: n, color: TPL_COLORS[state.templates.length % TPL_COLORS.length], exerciseIds: [] };
+      t = { id: uid(), name: n, kind: "strength", color: TPL_COLORS[state.templates.length % TPL_COLORS.length], exerciseIds: [] };
       state.templates.push(t);
     }
     byName[n] = t.id;
@@ -2093,10 +2129,12 @@ async function saveAsTemplate() {
   const existing = state.templates.find(t => t.name.toLowerCase() === name.toLowerCase());
   if (existing) {
     existing.exerciseIds = w.entries.map(e => e.exerciseId);
+    existing.kind = "strength";
   } else {
     state.templates.push({
       id: uid(),
       name,
+      kind: "strength",
       color: TPL_COLORS[state.templates.length % TPL_COLORS.length],
       exerciseIds: w.entries.map(e => e.exerciseId)
     });
@@ -2177,8 +2215,10 @@ function openCardioSheet(tpl = null) {
         state.cardioActivities = state.cardioActivities || [];
         if (!cardioActivities().includes(name)) state.cardioActivities.push(name);
         save();
+        // bereits Getipptes mitnehmen, damit nichts verloren geht
+        const bisher = sheet.querySelector("#c-min").value;
         sheet.remove();
-        openCardioSheet({ cardio: { activity: name, minutes: "" } });
+        openCardioSheet({ id: tpl && tpl.id, cardio: { activity: name, minutes: bisher } });
         return;
       }
       activity = chip.dataset.val;
@@ -2208,7 +2248,7 @@ function openCardioSheet(tpl = null) {
     };
     if (!isNaN(km) && km > 0) w.cardio.distance = Math.abs(km);
     if (note) w.note = note;
-    if (tpl) w.templateId = tpl.id;
+    if (tpl && tpl.id) w.templateId = tpl.id;
 
     state.workouts.push(w);
     save();
@@ -2256,7 +2296,7 @@ function viewMobility() {
         </div>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" onclick="runMobility(${ei})">▶ ${entry.seconds} s starten</button>
+        <button class="btn btn-secondary" style="text-transform:none" onclick="runMobility(${ei})">▶ ${entry.seconds} s starten</button>
         <button class="btn ${entry.done ? "btn-primary" : "btn-secondary"}" style="width:64px;flex-shrink:0"
           title="Erledigt" onclick="toggleMobilityDone(${ei})">✓</button>
       </div>
@@ -2416,10 +2456,11 @@ function exerciseCardHtml(entry, ei) {
     ? `<div class="note note-day" onclick="editEntryNote(${ei})">✎<span>${escapeHtml(entry.note)}</span></div>`
     : `<button class="note note-day empty" onclick="editEntryNote(${ei})">✎<span>Notiz für heute</span></button>`;
 
+  // stopPropagation, sonst öffnet der Klick zusätzlich das Übungsblatt darunter
   const photo = photoCache.get(entry.exerciseId);
   const photoHtml = photo
-    ? `<img class="ex-thumb" src="${photo}" alt="" onclick="viewPhoto('${entry.exerciseId}')">`
-    : `<button class="ex-photo-btn" title="Foto der Maschine hinzufügen" onclick="pickPhoto('${entry.exerciseId}')">📷</button>`;
+    ? `<img class="ex-thumb" src="${photo}" alt="" onclick="event.stopPropagation();viewPhoto('${entry.exerciseId}')">`
+    : `<button class="ex-photo-btn" title="Foto der Maschine hinzufügen" onclick="event.stopPropagation();pickPhoto('${entry.exerciseId}')">📷</button>`;
 
   return `
     <div class="card exercise-card">
@@ -2618,7 +2659,7 @@ function unlinkSuperset(ei) {
 }
 
 /* ============ Pausentimer ============ */
-let restEnd = 0, restTotal = 0, restInterval = null, audioCtx = null;
+let restEnd = 0, restTotal = 0, restInterval = null, audioCtx = null, restDoneCb = null;
 
 function primeAudio() {
   // iOS erlaubt Töne nur nach einer Nutzer-Aktion – deshalb hier vorbereiten
@@ -2646,12 +2687,9 @@ function beep() {
   } catch (e) { /* ohne Ton läuft der Timer trotzdem */ }
 }
 
-let restLabel = "Pause", restDoneCb = null;
-
 function startRest(seconds, label = "Pause", onDone = null) {
   restTotal = seconds;
   restEnd = Date.now() + seconds * 1000;
-  restLabel = label;
   restDoneCb = onDone;
   const bar = document.getElementById("rest-bar");
   const lbl = document.querySelector(".rest-label");
@@ -2773,7 +2811,8 @@ function celebrate(w) {
 }
 
 async function cancelWorkout() {
-  if (!await showConfirm("Training wirklich verwerfen? Alle Eingaben gehen verloren.", "Verwerfen", true)) return;
+  const wort = state.active && state.active.type === "mobility" ? "Einheit" : "Training";
+  if (!await showConfirm(`${wort} wirklich verwerfen? Alle Eingaben gehen verloren.`, "Verwerfen", true)) return;
   state.active = null;
   stopRest();
   save();
@@ -2853,7 +2892,8 @@ function exerciseStats(id) {
     trainings: rows.length,
     maxWeight: rows.length ? Math.max(...rows.map(r => r.best.weight)) : 0,
     maxVolume: rows.length ? Math.max(...rows.map(r => r.volume)) : 0,
-    maxOneRm: rows.length ? Math.max(...rows.map(r => r.oneRm)) : 0
+    maxOneRm: rows.length ? Math.max(...rows.map(r => r.oneRm)) : 0,
+    maxReps: rows.length ? Math.max(...rows.map(r => Math.max(...r.sets.map(s => s.reps)))) : 0
   };
 }
 
@@ -2877,7 +2917,9 @@ function openExerciseSheet(id) {
 
     ${st.trainings ? `<div class="kv-grid">
       <div class="kv"><div class="kv-val">${fmtWeight(st.maxWeight)}</div><div class="kv-lbl">Bestes Gewicht</div></div>
-      <div class="kv"><div class="kv-val">${fmtWeight(Math.round(st.maxOneRm * 2) / 2)}</div><div class="kv-lbl">Geschätztes 1RM</div></div>
+      ${st.maxOneRm > 0
+        ? `<div class="kv"><div class="kv-val">${fmtWeight(Math.round(st.maxOneRm * 2) / 2)}</div><div class="kv-lbl">Geschätztes 1RM</div></div>`
+        : `<div class="kv"><div class="kv-val">${st.maxReps}</div><div class="kv-lbl">Meiste Wdh.</div></div>`}
       <div class="kv"><div class="kv-val">${Math.round(st.maxVolume).toLocaleString("de-DE")} kg</div><div class="kv-lbl">Bestes Volumen</div></div>
       <div class="kv"><div class="kv-val">${st.trainings}</div><div class="kv-lbl">Trainings</div></div>
     </div>` : `<p class="empty-state" style="padding:14px 0">Noch keine abgeschlossenen Sätze für diese Übung.</p>`}
@@ -3017,7 +3059,10 @@ async function deleteExerciseFlow(id) {
     photoCache.delete(id);
     idbDeletePhoto(id);
   }
+  // In beiden Fällen aus den Trainingstagen entfernen – sonst bleibt dort ein toter Verweis
+  state.templates.forEach(t => { t.exerciseIds = t.exerciseIds.filter(x => x !== id); });
   save();
+  render();
 }
 
 // Wiederverwendbare Übungsauswahl. Liefert die gewählte Übungs-ID
@@ -3176,25 +3221,21 @@ function viewHistory() {
     const kind = kindOf(w);
     const expanded = expandedWorkout === w.id;
 
-    let body = "", meta = "";
+    const meta = workoutMeta(w);
+    let body = "";
     if (kind === "cardio") {
       const c = w.cardio || {};
-      meta = [c.activity, fmtDuration(w.end - w.start), c.distance ? fmtNum(c.distance) + " km" : null, c.intensity]
-        .filter(Boolean).join(" · ");
       body = `<div class="history-ex">
           <div class="history-ex-name">${escapeHtml(c.activity || "Cardio")}</div>
-          <div class="history-ex-sets">${fmtCount(c.minutes || 0, "Minute", "Minuten")}${c.distance ? " · " + fmtNum(c.distance) + " km" : ""}${c.intensity ? " · " + c.intensity : ""}</div>
+          <div class="history-ex-sets">${fmtCount(c.minutes || 0, "Minute", "Minuten")}${c.distance ? " · " + fmtNum(c.distance) + " km" : ""}${c.intensity ? " · " + escapeHtml(c.intensity) : ""}</div>
         </div>`;
     } else if (kind === "mobility") {
-      const secs = w.entries.reduce((n, e) => n + (e.seconds || 0), 0);
-      meta = `${fmtCount(w.entries.length, "Übung", "Übungen")} · ${Math.round(secs / 60)} Min. gedehnt · ${fmtDuration(w.end - w.start)}`;
       body = w.entries.map(e => `
         <div class="history-ex">
           <div class="history-ex-name">${escapeHtml(exName(e.exerciseId))}</div>
           <div class="history-ex-sets">${e.seconds} Sekunden</div>
         </div>`).join("");
     } else {
-      meta = `${fmtCount(w.entries.length, "Übung", "Übungen")} · ${fmtCount(w.entries.reduce((n, e) => n + workSets(e.sets).length, 0), "Satz", "Sätze")} · ${fmtDuration(w.end - w.start)}`;
       body = w.entries.map(e => `
         <div class="history-ex">
           <div class="history-ex-name">${escapeHtml(exName(e.exerciseId))}</div>
@@ -3213,7 +3254,7 @@ function viewHistory() {
     const tpl = w.templateId ? template(w.templateId) : null;
     const label = tpl ? tpl.name : (kind !== "strength" ? KIND_META[kind].label : "");
     return `
-      <div class="card history-item" onclick="toggleWorkout('${w.id}')">
+      <div class="card history-item" data-id="${w.id}" onclick="toggleWorkout('${w.id}')">
         <div class="history-date">${KIND_META[kind].icon} ${fmtDate(w.start)}${label ? ` · ${escapeHtml(label)}` : ""}</div>
         <div class="history-meta">${meta}</div>
         ${details}
@@ -3227,6 +3268,11 @@ function viewHistory() {
 function toggleWorkout(id) {
   expandedWorkout = expandedWorkout === id ? null : id;
   render();
+  // Beim Tippen auf einen Kalendertag liegt das Training oft weit unten
+  if (expandedWorkout) {
+    const el = document.querySelector(`.history-item[data-id="${expandedWorkout}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 }
 
 async function deleteWorkout(id) {
@@ -3330,7 +3376,9 @@ function viewProgress() {
     ${infoHtml}
     <div class="kv-grid">
       <div class="kv"><div class="kv-val">${fmtWeight(stats.maxWeight)}</div><div class="kv-lbl">Bestes Gewicht</div></div>
-      <div class="kv"><div class="kv-val">${fmtWeight(Math.round(stats.maxOneRm * 2) / 2)}</div><div class="kv-lbl">Geschätztes 1RM</div></div>
+      ${stats.maxOneRm > 0
+        ? `<div class="kv"><div class="kv-val">${fmtWeight(Math.round(stats.maxOneRm * 2) / 2)}</div><div class="kv-lbl">Geschätztes 1RM</div></div>`
+        : `<div class="kv"><div class="kv-val">${stats.maxReps}</div><div class="kv-lbl">Meiste Wdh.</div></div>`}
     </div>
     <button class="btn btn-ghost" style="margin-bottom:8px" onclick="openExerciseSheet('${progressExercise}')">Details &amp; Ziele öffnen</button>
     ${history.length >= 2 ? `<div class="card chart-wrap">${chartSvg(history)}</div>` : ""}
@@ -3401,6 +3449,11 @@ document.getElementById("import-input").addEventListener("change", e => {
 
 render(true);
 loadPhotos();
+
+if (loadError) {
+  showAlert("Deine gespeicherten Daten waren beim Start leider nicht lesbar. Die App startet deshalb leer. " +
+    "Der ursprüngliche Stand wurde nicht gelöscht – lade am besten dein letztes Backup über „Backup laden“.");
+}
 </script>
 </body>
 </html>
