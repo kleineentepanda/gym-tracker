@@ -433,22 +433,36 @@
     padding: 6px;
   }
 
-  .set-row {
+  .sets { --cols: 30px 1fr 13px 1fr 34px 26px; }
+  .sets.with-rpe { --cols: 28px 1fr 11px 1fr 42px 32px 24px; }
+  .set-row, .set-labels {
     display: grid;
-    grid-template-columns: 40px 1fr 22px 1fr 34px;
-    gap: 8px;
+    grid-template-columns: var(--cols);
+    gap: 6px;
     align-items: center;
-    margin-bottom: 8px;
   }
+  .set-row { margin-bottom: 8px; }
   .set-num {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
     color: var(--accent);
     font-family: var(--mono);
     font-size: 13px;
     font-weight: 700;
     text-align: center;
+    padding: 8px 0;
+    cursor: pointer;
   }
+  .set-row.is-warmup .set-num {
+    color: var(--gold);
+    border-color: rgba(255, 204, 85, 0.4);
+    background: rgba(255, 204, 85, 0.08);
+  }
+  .set-row.is-warmup input { border-style: dashed; }
   .set-row input {
     width: 100%;
+    min-width: 0;
     background: var(--card2);
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -457,36 +471,282 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     text-align: center;
-    padding: 10px 4px;
+    padding: 10px 2px;
     font-family: inherit;
   }
+  .set-row input::placeholder { color: var(--muted); opacity: 0.55; font-weight: 500; }
   .set-row input:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(79, 216, 255, 0.25), 0 0 14px rgba(79, 216, 255, 0.2);
   }
-  .set-x { color: var(--muted); text-align: center; font-size: 14px; }
+  .set-row.is-done input {
+    border-color: rgba(79, 216, 255, 0.45);
+    background: rgba(79, 216, 255, 0.09);
+  }
+  .set-rpe { font-size: 15px !important; }
+  .set-x { color: var(--muted); text-align: center; font-size: 13px; }
+  .set-check {
+    background: none;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 4px;
+    color: transparent;
+    font-size: 15px;
+    line-height: 1;
+    padding: 9px 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .set-row.is-done .set-check {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #03121c;
+    box-shadow: 0 0 14px var(--glow);
+  }
   .set-del {
     background: none; border: none;
     color: var(--muted);
-    font-size: 17px;
+    font-size: 16px;
     cursor: pointer;
     text-align: center;
     padding: 6px 0;
   }
   .set-labels {
-    display: grid;
-    grid-template-columns: 40px 1fr 22px 1fr 34px;
-    gap: 8px;
     font-family: var(--mono);
-    font-size: 9.5px;
+    font-size: 9px;
     color: var(--muted);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.12em;
     margin-bottom: 6px;
   }
   .set-labels span { text-align: center; }
+  .set-hint {
+    font-size: 11.5px;
+    color: var(--muted);
+    opacity: 0.75;
+    margin: 2px 0 6px;
+  }
+
+  /* ---------- Ziel-Vorgabe & Supersatz ---------- */
+  .target-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .target-line b { color: var(--accent); font-weight: 700; }
+  .target-line .prog { margin-left: auto; color: var(--accent); }
+  .superset {
+    position: relative;
+    border-left: 2px solid var(--accent2);
+    padding-left: 8px;
+    margin-bottom: 12px;
+  }
+  .superset > .card { margin-bottom: 8px; }
+  .superset > .card:last-of-type { margin-bottom: 0; }
+  .superset-tag {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 6px;
+  }
+
+  /* ---------- Pausentimer ---------- */
+  .rest-bar {
+    position: fixed;
+    left: 0; right: 0;
+    bottom: calc(57px + env(safe-area-inset-bottom));
+    max-width: 480px;
+    margin: 0 auto;
+    z-index: 60;
+    background: linear-gradient(180deg, rgba(12, 22, 38, 0.98), rgba(5, 9, 18, 0.98));
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--accent);
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5), 0 0 24px rgba(79, 216, 255, 0.14);
+    padding: 10px 14px 12px;
+    animation: slideUp 0.25s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+  .rest-bar[hidden] { display: none; }
+  .rest-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .rest-label {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .rest-time {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+    text-shadow: 0 0 16px var(--glow);
+  }
+  .rest-track {
+    height: 3px;
+    background: rgba(79, 216, 255, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 9px;
+  }
+  .rest-fill {
+    height: 100%;
+    background: var(--grad);
+    box-shadow: 0 0 12px var(--glow);
+    transition: width 0.3s linear;
+  }
+  .rest-btns { display: flex; gap: 8px; }
+  .rest-btns button {
+    flex: 1;
+    background: rgba(79, 216, 255, 0.08);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    padding: 9px 0;
+    cursor: pointer;
+  }
+  .rest-btns button:active { background: rgba(79, 216, 255, 0.2); }
+  body.has-rest nav { box-shadow: none; }
+
+  /* ---------- Aktionsblatt & Formularzeilen ---------- */
+  .sheet-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 16px;
+    padding: 14px 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .sheet-btn:last-child { border-bottom: none; }
+  .sheet-btn .sb-icon { font-size: 17px; width: 22px; text-align: center; flex-shrink: 0; }
+  .sheet-btn.danger { color: var(--red); }
+  .sheet-scroll { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+  .field { margin-bottom: 16px; }
+  .field-label {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; }
+  .seg button {
+    flex: 1;
+    min-width: 44px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 4px;
+    cursor: pointer;
+  }
+  .seg button.on {
+    background: rgba(79, 216, 255, 0.14);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+    box-shadow: 0 0 14px rgba(79, 216, 255, 0.15);
+  }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chips button {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 7px 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .chips button.on {
+    background: rgba(139, 92, 255, 0.16);
+    border-color: var(--accent2);
+    color: #cbb6ff;
+    font-weight: 600;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 15px;
+  }
+  .toggle-row:last-of-type { border-bottom: none; }
+  .toggle-row .tr-sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; line-height: 1.4; }
+  .switch {
+    flex-shrink: 0;
+    width: 48px; height: 27px;
+    border-radius: 14px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 21px; height: 21px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: transform 0.18s cubic-bezier(0.3, 1.3, 0.5, 1), background 0.18s ease;
+  }
+  .switch.on { background: rgba(79, 216, 255, 0.2); border-color: var(--accent); }
+  .switch.on::after { transform: translateX(21px); background: var(--accent); box-shadow: 0 0 12px var(--glow); }
+  .kv-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .kv {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .kv-val { font-family: var(--mono); font-size: 15px; font-weight: 800; color: var(--accent); }
+  .kv-lbl {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-top: 4px;
+  }
 
   /* ---------- Modal ---------- */
   .modal-backdrop {
@@ -719,6 +979,18 @@
 <body>
 <div id="app">
   <main id="main"></main>
+  <div class="rest-bar" id="rest-bar" hidden>
+    <div class="rest-top">
+      <span class="rest-label">Pause</span>
+      <span class="rest-time" id="rest-time">0:00</span>
+    </div>
+    <div class="rest-track"><div class="rest-fill" id="rest-fill"></div></div>
+    <div class="rest-btns">
+      <button onclick="adjustRest(-15)">−15 s</button>
+      <button onclick="adjustRest(15)">+15 s</button>
+      <button onclick="stopRest()">Überspringen</button>
+    </div>
+  </div>
   <nav id="nav">
     <button data-tab="home"><span class="icon">🏋️</span>Training</button>
     <button data-tab="history"><span class="icon">📅</span>Verlauf</button>
@@ -745,7 +1017,9 @@ function migrate(data) {
   data.exercises = data.exercises || [];
   data.workouts = data.workouts || [];
   data.templates = data.templates || [];
-  data.settings = Object.assign({ restSeconds: 90, sound: true, vibrate: true }, data.settings || {});
+  data.settings = Object.assign(
+    { restSeconds: 90, sound: true, vibrate: true, autoRest: true, showRpe: false, defaultSets: 3 },
+    data.settings || {});
   data.plan = data.plan || { days: {} };
   data.workouts.forEach(w => {
     if (!w.type) w.type = "strength";
@@ -822,38 +1096,95 @@ function fmtWeight(w) {
   return (w % 1 === 0 ? w : w.toFixed(1).replace(".", ",")) + " kg";
 }
 
-function setsSummary(sets) {
-  return sets.map(s => `${s.weight % 1 === 0 ? s.weight : String(s.weight).replace(".", ",")} kg × ${s.reps}`).join("  ·  ");
+function setsSummary(sets, marks = false) {
+  return (sets || []).map(s => {
+    let t = `${String(s.weight).replace(".", ",")} kg × ${s.reps}`;
+    if (marks) {
+      if (s.warmup) t = "🔸" + t;
+      if (typeof s.rpe === "number") t += ` @${fmtNum(s.rpe)}`;
+    }
+    return t;
+  }).join("  ·  ");
+}
+
+// Aufwärmsätze zählen nirgends mit: nicht bei Rekorden, nicht im Volumen,
+// nicht in der Empfehlung.
+function workSets(sets) {
+  return (sets || []).filter(s => !s.warmup);
+}
+
+function setVolume(sets) {
+  return workSets(sets).reduce((v, s) => v + s.weight * s.reps, 0);
+}
+
+// Geschätztes Einer-Maximum nach Epley
+function epley(weight, reps) {
+  if (!weight || !reps) return 0;
+  return weight * (1 + reps / 30);
+}
+
+function targetOf(exerciseId) {
+  const ex = exercise(exerciseId) || {};
+  return {
+    sets: ex.targetSets || state.settings.defaultSets || 3,
+    min: ex.repMin || 8,
+    max: ex.repMax || 12
+  };
 }
 
 // Letzte Leistung für eine Übung aus abgeschlossenen Trainings finden
 function lastPerformance(exerciseId) {
   const sorted = [...state.workouts].sort((a, b) => b.start - a.start);
   for (const w of sorted) {
-    const entry = w.entries.find(e => e.exerciseId === exerciseId && e.sets.length > 0);
-    if (entry) return { date: w.start, sets: entry.sets };
+    const entry = w.entries.find(e => e.exerciseId === exerciseId && workSets(e.sets).length > 0);
+    if (entry) return { date: w.start, sets: workSets(entry.sets) };
   }
   return null;
 }
 
-// Steigerungs-Empfehlung nach doppelter Progression (Ziel-Bereich: 8–12 Wdh.)
-// Alle Sätze ≥ 12 Wdh. → Gewicht +2,5 % (auf 0,5 kg gerundet), zurück auf 8 Wdh.
+// Steigerungs-Empfehlung nach doppelter Progression im eingestellten Ziel-Bereich.
+// Alle Sätze am oberen Ende → mehr Gewicht, zurück ans untere Ende.
 // Sonst → gleiches Gewicht, eine Wiederholung mehr als der schwächste Satz.
+// Wenn RPE erfasst wurde, steuert es die Schrittgröße: locker → größerer Sprung,
+// am Anschlag → erst mal halten.
 function recommendation(exerciseId) {
   const last = lastPerformance(exerciseId);
   if (!last || !last.sets.length) return null;
   const sets = last.sets;
+  const tgt = targetOf(exerciseId);
   const top = sets.reduce((m, s) => s.weight > m.weight ? s : m, sets[0]);
   const minReps = Math.min(...sets.map(s => s.reps));
+  const rpes = sets.map(s => s.rpe).filter(r => typeof r === "number");
+  const avgRpe = rpes.length ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null;
+
   if (top.weight === 0) {
     return { text: `${minReps + 1} Wdh. pro Satz`, why: "Körpergewicht – Steigerung über Wiederholungen" };
   }
-  if (sets.every(s => s.reps >= 12)) {
-    let nw = Math.ceil((top.weight * 1.025) / 0.5) * 0.5;
-    if (nw <= top.weight) nw = top.weight + 0.5;
-    return { text: `${fmtWeight(nw)} × 8 Wdh.`, why: "alle Sätze ≥ 12 Wdh. → Zeit für mehr Gewicht (+2,5 %)" };
+  if (avgRpe !== null && avgRpe >= 9.5) {
+    return {
+      text: `${fmtWeight(top.weight)} × ${minReps} Wdh.`,
+      why: `letztes Mal RPE ${fmtNum(avgRpe)} – erst sauber wiederholen, dann steigern`
+    };
   }
-  return { text: `${fmtWeight(top.weight)} × ${Math.min(minReps + 1, 12)} Wdh.`, why: "gleiches Gewicht, eine Wdh. mehr (Ziel: 12)" };
+  if (sets.every(s => s.reps >= tgt.max)) {
+    const step = (avgRpe !== null && avgRpe <= 7) ? 1.05 : 1.025;
+    let nw = Math.ceil((top.weight * step) / 0.5) * 0.5;
+    if (nw <= top.weight) nw = top.weight + 0.5;
+    const pct = step === 1.05 ? "+5 %" : "+2,5 %";
+    const extra = step === 1.05 ? ` und RPE nur ${fmtNum(avgRpe)}` : "";
+    return {
+      text: `${fmtWeight(nw)} × ${tgt.min} Wdh.`,
+      why: `alle Sätze ≥ ${tgt.max} Wdh.${extra} → Zeit für mehr Gewicht (${pct})`
+    };
+  }
+  return {
+    text: `${fmtWeight(top.weight)} × ${Math.min(minReps + 1, tgt.max)} Wdh.`,
+    why: `gleiches Gewicht, eine Wdh. mehr (Ziel: ${tgt.max})`
+  };
+}
+
+function fmtNum(n) {
+  return (Math.round(n * 10) / 10).toString().replace(".", ",");
 }
 
 function escapeHtml(str) {
@@ -1182,8 +1513,8 @@ function viewHome() {
   }
   return `
     <div class="head-block">
-      <div class="deco-kana">ステータス</div>
-      <div class="sys-h">Status</div>
+      <button class="icon-btn" style="position:absolute;top:-2px;right:-6px;font-size:20px" title="Einstellungen" onclick="openSettings()">⚙</button>
+      <div class="sys-h">Status ステータス</div>
       <h1>Gym Tracker</h1>
       <p class="subtitle">Bereit für dein Training?</p>
     </div>
@@ -1219,6 +1550,7 @@ function startFromTemplate(id) {
       .filter(x => state.exercises.some(e => e.id === x && !e.archived))
       .map(x => ({ exerciseId: x, sets: [] }))
   };
+  state.active.entries.forEach(fillTargetSets);
   save();
   render();
 }
@@ -1249,67 +1581,106 @@ async function saveAsTemplate() {
 }
 
 /* ============ Ansicht: Aktives Training ============ */
-function viewWorkout() {
-  const w = state.active;
-  const entriesHtml = w.entries.map((entry, ei) => {
-    const last = lastPerformance(entry.exerciseId);
-    const lastHtml = last
-      ? `<div class="last-time">Letztes Mal (${fmtDateShort(last.date)}): <strong>${setsSummary(last.sets)}</strong></div>`
-      : `<div class="last-time">Erste Aufzeichnung für diese Übung 🎉</div>`;
-    const rec = recommendation(entry.exerciseId);
-    const recHtml = rec
-      ? `<div class="recommend">
-           <div class="rec-head">System-Hinweis</div>
-           Heute: <strong>${rec.text}</strong><span class="rec-why"> – ${rec.why}</span>
-         </div>`
-      : "";
+function exerciseCardHtml(entry, ei) {
+  const tgt = targetOf(entry.exerciseId);
+  const doneCount = workSets(entry.sets).filter(s => s.done).length;
 
-    const note = exNote(entry.exerciseId);
-    const noteHtml = note
-      ? `<div class="note note-ex" onclick="editExerciseNote('${entry.exerciseId}')">📌<span>${escapeHtml(note)}</span></div>`
-      : `<button class="note note-ex empty" onclick="editExerciseNote('${entry.exerciseId}')">📌<span>Notiz zur Übung hinzufügen</span></button>`;
+  const last = lastPerformance(entry.exerciseId);
+  const lastHtml = last
+    ? `<div class="last-time">Letztes Mal (${fmtDateShort(last.date)}): <strong>${setsSummary(last.sets)}</strong></div>`
+    : `<div class="last-time">Erste Aufzeichnung für diese Übung 🎉</div>`;
+  const rec = recommendation(entry.exerciseId);
+  const recHtml = rec
+    ? `<div class="recommend">
+         <div class="rec-head">System-Hinweis</div>
+         Heute: <strong>${rec.text}</strong><span class="rec-why"> – ${rec.why}</span>
+       </div>`
+    : "";
 
-    const setsHtml = entry.sets.map((s, si) => `
-      <div class="set-row">
-        <div class="set-num">${si + 1}</div>
-        <input type="text" inputmode="decimal" autocomplete="off" placeholder="kg"
+  const note = exNote(entry.exerciseId);
+  const noteHtml = note
+    ? `<div class="note note-ex" onclick="editExerciseNote('${entry.exerciseId}')">📌<span>${escapeHtml(note)}</span></div>`
+    : `<button class="note note-ex empty" onclick="editExerciseNote('${entry.exerciseId}')">📌<span>Notiz zur Übung hinzufügen</span></button>`;
+
+  const showRpe = !!state.settings.showRpe;
+  let workNo = 0;
+  const setsHtml = entry.sets.map((s, si) => {
+    if (!s.warmup) workNo++;
+    const cls = "set-row" + (s.warmup ? " is-warmup" : "") + (s.done ? " is-done" : "");
+    const hintW = typeof s.hintW === "number" ? String(s.hintW).replace(".", ",") : "kg";
+    const hintR = typeof s.hintR === "number" ? String(s.hintR) : "Wdh.";
+    return `
+      <div class="${cls}">
+        <button class="set-num" title="Antippen für Aufwärmsatz" onclick="toggleWarmup(${ei},${si})">${s.warmup ? "A" : workNo}</button>
+        <input type="text" inputmode="decimal" autocomplete="off" placeholder="${hintW}"
           value="${s.weight === "" ? "" : String(s.weight).replace(".", ",")}"
           onchange="updateSet(${ei},${si},'weight',this.value)">
         <div class="set-x">×</div>
-        <input type="text" inputmode="numeric" autocomplete="off" placeholder="Wdh."
-          value="${s.reps ?? ""}" onchange="updateSet(${ei},${si},'reps',this.value)">
+        <input type="text" inputmode="numeric" autocomplete="off" placeholder="${hintR}"
+          value="${s.reps === "" || s.reps == null ? "" : s.reps}"
+          onchange="updateSet(${ei},${si},'reps',this.value)">
+        ${showRpe ? `<input class="set-rpe" type="text" inputmode="decimal" autocomplete="off" placeholder="RPE"
+          value="${typeof s.rpe === "number" ? fmtNum(s.rpe) : ""}"
+          onchange="updateSet(${ei},${si},'rpe',this.value)">` : ""}
+        <button class="set-check" title="Satz erledigt" onclick="toggleDone(${ei},${si})">✓</button>
         <button class="set-del" onclick="deleteSet(${ei},${si})">✕</button>
-      </div>`).join("");
-
-    const dayNoteHtml = entry.note
-      ? `<div class="note note-day" onclick="editEntryNote(${ei})">✎<span>${escapeHtml(entry.note)}</span></div>`
-      : `<button class="note note-day empty" onclick="editEntryNote(${ei})">✎<span>Notiz für heute</span></button>`;
-
-    const photo = photoCache.get(entry.exerciseId);
-    const photoHtml = photo
-      ? `<img class="ex-thumb" src="${photo}" alt="" onclick="viewPhoto('${entry.exerciseId}')">`
-      : `<button class="ex-photo-btn" title="Foto der Maschine hinzufügen" onclick="pickPhoto('${entry.exerciseId}')">📷</button>`;
-
-    return `
-      <div class="card exercise-card">
-        <div class="exercise-title">
-          <div class="ex-title-left">
-            ${photoHtml}
-            <span>${escapeHtml(exName(entry.exerciseId))}</span>
-          </div>
-          <div class="ex-actions">
-            <button class="icon-btn" title="Umbenennen" onclick="renameExercise('${entry.exerciseId}')">✏️</button>
-            <button class="icon-btn" title="Übung entfernen" onclick="removeExercise(${ei})">✕</button>
-          </div>
-        </div>
-        ${noteHtml}
-        ${lastHtml}
-        ${recHtml}
-        ${entry.sets.length ? `<div class="set-labels"><span>Satz</span><span>Gewicht</span><span></span><span>Wdh.</span><span></span></div>` : ""}
-        ${setsHtml}
-        <button class="btn btn-ghost" style="width:auto;padding:8px 4px" onclick="addSet(${ei})">+ Satz hinzufügen</button>
-        ${dayNoteHtml}
       </div>`;
+  }).join("");
+
+  const labels = `<div class="set-labels">
+      <span>Satz</span><span>Gewicht</span><span></span><span>Wdh.</span>
+      ${showRpe ? "<span>RPE</span>" : ""}<span>✓</span><span></span>
+    </div>`;
+
+  const dayNoteHtml = entry.note
+    ? `<div class="note note-day" onclick="editEntryNote(${ei})">✎<span>${escapeHtml(entry.note)}</span></div>`
+    : `<button class="note note-day empty" onclick="editEntryNote(${ei})">✎<span>Notiz für heute</span></button>`;
+
+  const photo = photoCache.get(entry.exerciseId);
+  const photoHtml = photo
+    ? `<img class="ex-thumb" src="${photo}" alt="" onclick="viewPhoto('${entry.exerciseId}')">`
+    : `<button class="ex-photo-btn" title="Foto der Maschine hinzufügen" onclick="pickPhoto('${entry.exerciseId}')">📷</button>`;
+
+  return `
+    <div class="card exercise-card">
+      <div class="exercise-title">
+        <div class="ex-title-left" onclick="openExerciseSheet('${entry.exerciseId}')">
+          ${photoHtml}
+          <span>${escapeHtml(exName(entry.exerciseId))}</span>
+        </div>
+        <div class="ex-actions">
+          <button class="icon-btn" title="Menü" onclick="openExerciseMenu(${ei})">⋯</button>
+        </div>
+      </div>
+      <div class="target-line" onclick="openExerciseSheet('${entry.exerciseId}')">
+        Ziel <b>${tgt.sets} × ${tgt.min}–${tgt.max}</b> Wdh.
+        <span class="prog">${doneCount}/${tgt.sets} ✓</span>
+      </div>
+      ${noteHtml}
+      ${lastHtml}
+      ${recHtml}
+      ${entry.sets.length ? `<div class="sets${showRpe ? " with-rpe" : ""}">${labels}${setsHtml}</div>` : ""}
+      ${entry.sets.length ? `<div class="set-hint">Satznummer antippen = Aufwärmsatz · ✓ übernimmt den Vorschlag</div>` : ""}
+      <button class="btn btn-ghost" style="width:auto;padding:8px 4px" onclick="addSet(${ei})">+ Satz hinzufügen</button>
+      ${dayNoteHtml}
+    </div>`;
+}
+
+function viewWorkout() {
+  const w = state.active;
+
+  // Aufeinanderfolgende Übungen mit gleicher Supersatz-Kennung zusammenfassen
+  const groups = [];
+  w.entries.forEach((entry, ei) => {
+    const g = groups[groups.length - 1];
+    if (entry.sgroup && g && g.sgroup === entry.sgroup) g.items.push({ entry, ei });
+    else groups.push({ sgroup: entry.sgroup || null, items: [{ entry, ei }] });
+  });
+  const entriesHtml = groups.map(g => {
+    const inner = g.items.map(it => exerciseCardHtml(it.entry, it.ei)).join("");
+    return (g.sgroup && g.items.length > 1)
+      ? `<div class="superset"><div class="superset-tag">⟡ Supersatz · ${g.items.length} Übungen ohne Pause</div>${inner}</div>`
+      : inner;
   }).join("");
 
   return `
@@ -1342,30 +1713,86 @@ function startTimer() {
   timerInterval = setInterval(update, 1000);
 }
 
+// Vorschlagswerte für einen neuen Satz: erst der vorherige Satz dieses Trainings,
+// sonst das letzte Training. Sie stehen nur als grauer Platzhalter im Feld –
+// gespeichert wird erst, wenn getippt oder abgehakt wird.
+function setHints(entry, index) {
+  const prev = entry.sets.slice(0, index).filter(s => !s.warmup).pop();
+  if (prev && prev.weight !== "" && prev.reps !== "") return { hintW: prev.weight, hintR: prev.reps };
+  const last = lastPerformance(entry.exerciseId);
+  if (last && last.sets.length) {
+    const src = last.sets[Math.min(index, last.sets.length - 1)];
+    return { hintW: src.weight, hintR: src.reps };
+  }
+  return {};
+}
+
+// Beim Hinzufügen einer Übung direkt die Ziel-Sätze als leere Zeilen anlegen
+function fillTargetSets(entry) {
+  const n = targetOf(entry.exerciseId).sets;
+  while (entry.sets.length < n) {
+    entry.sets.push(Object.assign({ weight: "", reps: "" }, setHints(entry, entry.sets.length)));
+  }
+}
+
 function addSet(ei) {
   const entry = state.active.entries[ei];
-  let weight = "", reps = "";
-  if (entry.sets.length) {
-    // Werte vom vorherigen Satz übernehmen
-    const prev = entry.sets[entry.sets.length - 1];
-    weight = prev.weight; reps = prev.reps;
-  } else {
-    // Werte vom letzten Training übernehmen
-    const last = lastPerformance(entry.exerciseId);
-    if (last && last.sets.length) {
-      weight = last.sets[0].weight; reps = last.sets[0].reps;
-    }
-  }
-  entry.sets.push({ weight, reps });
+  entry.sets.push(Object.assign({ weight: "", reps: "" }, setHints(entry, entry.sets.length)));
   save();
   render();
 }
 
 function updateSet(ei, si, field, value) {
+  const s = state.active.entries[ei].sets[si];
   let num = parseFloat(String(value).replace(",", "."));
-  if (!isNaN(num)) num = Math.abs(field === "reps" ? Math.round(num) : num);
-  state.active.entries[ei].sets[si][field] = isNaN(num) ? "" : num;
+  if (field === "rpe") {
+    s.rpe = isNaN(num) ? undefined : Math.min(10, Math.max(5, Math.round(num * 2) / 2));
+    if (s.rpe === undefined) delete s.rpe;
+  } else {
+    if (!isNaN(num)) num = Math.abs(field === "reps" ? Math.round(num) : num);
+    s[field] = isNaN(num) ? "" : num;
+  }
   save();
+}
+
+function toggleWarmup(ei, si) {
+  const s = state.active.entries[ei].sets[si];
+  if (s.warmup) delete s.warmup; else s.warmup = true;
+  save();
+  render();
+}
+
+function toggleDone(ei, si) {
+  const entry = state.active.entries[ei];
+  const s = entry.sets[si];
+  if (s.done) {
+    delete s.done;
+    save();
+    render();
+    return;
+  }
+  primeAudio();
+  // Abhaken übernimmt den Vorschlag, wenn noch nichts eingetragen wurde
+  if (s.weight === "" && typeof s.hintW === "number") s.weight = s.hintW;
+  if (s.reps === "" && typeof s.hintR === "number") s.reps = s.hintR;
+  if (s.weight === "" || s.reps === "" || !s.reps) {
+    showAlert("Trag erst Gewicht und Wiederholungen ein – oder es gibt keinen Vorschlag zum Übernehmen.");
+    return;
+  }
+  s.done = true;
+  save();
+  render();
+  if (state.settings.autoRest && isLastOfSuperset(ei)) {
+    const base = state.settings.restSeconds || 90;
+    startRest(s.warmup ? Math.max(20, Math.round(base / 2 / 5) * 5) : base);
+  }
+}
+
+function isLastOfSuperset(ei) {
+  const e = state.active.entries[ei];
+  if (!e.sgroup) return true;
+  const next = state.active.entries[ei + 1];
+  return !(next && next.sgroup === e.sgroup);
 }
 
 function deleteSet(ei, si) {
@@ -1376,18 +1803,118 @@ function deleteSet(ei, si) {
 
 async function removeExercise(ei) {
   const entry = state.active.entries[ei];
-  if (entry.sets.length && !await showConfirm(`„${exName(entry.exerciseId)}" wirklich entfernen?`, "Entfernen", true)) return;
+  const hasData = entry.sets.some(s => s.weight !== "" || s.reps !== "");
+  if (hasData && !await showConfirm(`„${exName(entry.exerciseId)}" wirklich entfernen?`, "Entfernen", true)) return;
   state.active.entries.splice(ei, 1);
   save();
   render();
+}
+
+function moveExercise(ei, dir) {
+  const list = state.active.entries;
+  const to = ei + dir;
+  if (to < 0 || to >= list.length) return;
+  [list[ei], list[to]] = [list[to], list[ei]];
+  save();
+  render();
+}
+
+function linkSuperset(ei) {
+  const list = state.active.entries;
+  const a = list[ei], b = list[ei + 1];
+  if (!b) return;
+  const g = a.sgroup || b.sgroup || uid();
+  a.sgroup = g; b.sgroup = g;
+  save();
+  render();
+}
+
+function unlinkSuperset(ei) {
+  const g = state.active.entries[ei].sgroup;
+  if (!g) return;
+  state.active.entries.forEach(e => { if (e.sgroup === g) delete e.sgroup; });
+  save();
+  render();
+}
+
+/* ============ Pausentimer ============ */
+let restEnd = 0, restTotal = 0, restInterval = null, audioCtx = null;
+
+function primeAudio() {
+  // iOS erlaubt Töne nur nach einer Nutzer-Aktion – deshalb hier vorbereiten
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  } catch (e) {}
+}
+
+function beep() {
+  try {
+    primeAudio();
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    [[880, 0], [1180, 0.18]].forEach(([freq, off]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "sine";
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t + off);
+      g.gain.exponentialRampToValueAtTime(0.3, t + off + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + off + 0.16);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t + off); o.stop(t + off + 0.2);
+    });
+  } catch (e) { /* ohne Ton läuft der Timer trotzdem */ }
+}
+
+function startRest(seconds) {
+  restTotal = seconds;
+  restEnd = Date.now() + seconds * 1000;
+  const bar = document.getElementById("rest-bar");
+  if (bar) bar.hidden = false;
+  if (restInterval) clearInterval(restInterval);
+  restInterval = setInterval(tickRest, 200);
+  tickRest();
+}
+
+function tickRest() {
+  const left = Math.max(0, restEnd - Date.now());
+  const s = Math.ceil(left / 1000);
+  const timeEl = document.getElementById("rest-time");
+  const fillEl = document.getElementById("rest-fill");
+  if (timeEl) timeEl.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  if (fillEl) fillEl.style.width = (restTotal ? (left / (restTotal * 1000)) * 100 : 0) + "%";
+  if (left <= 0) {
+    stopRest();
+    if (state.settings.vibrate && navigator.vibrate) navigator.vibrate([130, 90, 130]);
+    if (state.settings.sound) beep();
+  }
+}
+
+function adjustRest(delta) {
+  if (!restInterval) return;
+  restEnd = Math.max(Date.now(), restEnd + delta * 1000);
+  restTotal = Math.max(10, restTotal + delta);
+  tickRest();
+}
+
+function stopRest() {
+  if (restInterval) { clearInterval(restInterval); restInterval = null; }
+  const bar = document.getElementById("rest-bar");
+  if (bar) bar.hidden = true;
 }
 
 async function finishWorkout() {
   const w = state.active;
   // Leere Sätze und Übungen ohne Sätze aussortieren
   const entries = w.entries
-    .map(e => ({ ...e, sets: e.sets.filter(s => s.weight !== "" && s.reps !== "" && s.reps > 0) }))
-    .filter(e => e.sets.length > 0);
+    .map(e => ({
+      ...e,
+      sets: e.sets
+        .filter(s => s.weight !== "" && s.reps !== "" && s.reps > 0)
+        // Vorschlagswerte und Häkchen sind nur währenddessen relevant
+        .map(({ hintW, hintR, done, ...rest }) => rest)
+    }))
+    .filter(e => workSets(e.sets).length > 0);
   if (!entries.length) {
     showAlert("Trage erst mindestens einen Satz mit Gewicht und Wiederholungen ein.");
     return;
@@ -1397,6 +1924,7 @@ async function finishWorkout() {
   if (w.templateId) saved.templateId = w.templateId;
   state.workouts.push(saved);
   state.active = null;
+  stopRest();
   save();
   currentTab = "history";
   expandedWorkout = saved.id;
@@ -1405,8 +1933,8 @@ async function finishWorkout() {
 }
 
 function celebrate(w) {
-  const sets = w.entries.reduce((n, e) => n + e.sets.length, 0);
-  const volume = Math.round(w.entries.reduce((v, e) => v + e.sets.reduce((x, s) => x + s.weight * s.reps, 0), 0));
+  const sets = w.entries.reduce((n, e) => n + workSets(e.sets).length, 0);
+  const volume = Math.round(w.entries.reduce((v, e) => v + setVolume(e.sets), 0));
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop dialog-backdrop";
   backdrop.innerHTML = `<div class="dialog">
@@ -1431,8 +1959,229 @@ function celebrate(w) {
 async function cancelWorkout() {
   if (!await showConfirm("Training wirklich verwerfen? Alle Eingaben gehen verloren.", "Verwerfen", true)) return;
   state.active = null;
+  stopRest();
   save();
   render();
+}
+
+/* ============ Blätter von unten (Menüs & Formulare) ============ */
+function openSheet(title, innerHtml) {
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+  backdrop.innerHTML = `<div class="modal">
+    <h2>${escapeHtml(title)}</h2>
+    <div class="sheet-scroll">${innerHtml}</div>
+  </div>`;
+  backdrop.addEventListener("click", e => { if (e.target === backdrop) backdrop.remove(); });
+  document.body.appendChild(backdrop);
+  return backdrop;
+}
+
+function openExerciseMenu(ei) {
+  const list = state.active.entries;
+  const entry = list[ei];
+  const next = list[ei + 1];
+  const items = [
+    { icon: "📊", label: "Details & Ziele", act: "details" },
+    { icon: "✏️", label: "Umbenennen", act: "rename" },
+    { icon: "📌", label: "Notiz zur Übung", act: "note" },
+    { icon: "🔁", label: "Übung tauschen", act: "swap" }
+  ];
+  if (ei > 0) items.push({ icon: "⬆️", label: "Nach oben schieben", act: "up" });
+  if (ei < list.length - 1) items.push({ icon: "⬇️", label: "Nach unten schieben", act: "down" });
+  if (next && !(entry.sgroup && next.sgroup === entry.sgroup)) {
+    items.push({ icon: "⟡", label: `Supersatz mit „${exName(next.exerciseId)}"`, act: "link" });
+  }
+  if (entry.sgroup) items.push({ icon: "🔓", label: "Supersatz auflösen", act: "unlink" });
+  items.push({ icon: "✕", label: "Aus Training entfernen", act: "remove", cls: "danger" });
+
+  const sheet = openSheet(exName(entry.exerciseId), items.map(i =>
+    `<button class="sheet-btn ${i.cls || ""}" data-act="${i.act}">
+       <span class="sb-icon">${i.icon}</span>${escapeHtml(i.label)}
+     </button>`).join(""));
+
+  sheet.addEventListener("click", e => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    sheet.remove();
+    const act = btn.dataset.act;
+    if (act === "details") openExerciseSheet(entry.exerciseId);
+    else if (act === "rename") renameExercise(entry.exerciseId);
+    else if (act === "note") editExerciseNote(entry.exerciseId);
+    else if (act === "swap") openExercisePicker(ei);
+    else if (act === "up") moveExercise(ei, -1);
+    else if (act === "down") moveExercise(ei, 1);
+    else if (act === "link") linkSuperset(ei);
+    else if (act === "unlink") unlinkSuperset(ei);
+    else if (act === "remove") removeExercise(ei);
+  });
+}
+
+const MUSCLES = ["Brust", "Rücken", "Schultern", "Bizeps", "Trizeps", "Beine", "Waden", "Bauch", "Ganzkörper"];
+
+// Alle Sätze einer Übung über alle Trainings – Grundlage für die Bestwerte
+function exerciseStats(id) {
+  const rows = [];
+  state.workouts.forEach(w => {
+    const entry = w.entries.find(e => e.exerciseId === id);
+    if (!entry) return;
+    const sets = workSets(entry.sets);
+    if (!sets.length) return;
+    const best = sets.reduce((m, s) => s.weight > m.weight ? s : m, sets[0]);
+    const bestE = sets.reduce((m, s) => epley(s.weight, s.reps) > epley(m.weight, m.reps) ? s : m, sets[0]);
+    rows.push({ date: w.start, sets, best, volume: setVolume(sets), oneRm: epley(bestE.weight, bestE.reps) });
+  });
+  rows.sort((a, b) => b.date - a.date);
+  return {
+    rows,
+    trainings: rows.length,
+    maxWeight: rows.length ? Math.max(...rows.map(r => r.best.weight)) : 0,
+    maxVolume: rows.length ? Math.max(...rows.map(r => r.volume)) : 0,
+    maxOneRm: rows.length ? Math.max(...rows.map(r => r.oneRm)) : 0
+  };
+}
+
+function openExerciseSheet(id) {
+  const ex = exercise(id);
+  if (!ex) return;
+  const tgt = targetOf(id);
+  const st = exerciseStats(id);
+  const photo = photoCache.get(id);
+
+  const html = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      ${photo
+        ? `<img class="ex-thumb" style="width:60px;height:60px" src="${photo}" alt="" data-act="photo">`
+        : `<button class="ex-photo-btn" style="width:60px;height:60px" data-act="photo">📷</button>`}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:18px;font-weight:700;overflow-wrap:anywhere">${escapeHtml(ex.name)}</div>
+        <button class="btn-link" style="padding:4px 0" data-act="rename">Umbenennen</button>
+      </div>
+    </div>
+
+    ${st.trainings ? `<div class="kv-grid">
+      <div class="kv"><div class="kv-val">${fmtWeight(st.maxWeight)}</div><div class="kv-lbl">Bestes Gewicht</div></div>
+      <div class="kv"><div class="kv-val">${fmtWeight(Math.round(st.maxOneRm * 2) / 2)}</div><div class="kv-lbl">Geschätztes 1RM</div></div>
+      <div class="kv"><div class="kv-val">${Math.round(st.maxVolume).toLocaleString("de-DE")} kg</div><div class="kv-lbl">Bestes Volumen</div></div>
+      <div class="kv"><div class="kv-val">${st.trainings}</div><div class="kv-lbl">Trainings</div></div>
+    </div>` : `<p class="empty-state" style="padding:14px 0">Noch keine abgeschlossenen Sätze für diese Übung.</p>`}
+
+    <div class="field">
+      <div class="field-label">Ziel: Anzahl Sätze</div>
+      <div class="seg" data-group="sets">
+        ${[2, 3, 4, 5, 6].map(n => `<button data-val="${n}" class="${n === tgt.sets ? "on" : ""}">${n}</button>`).join("")}
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Ziel: Wiederholungsbereich</div>
+      <div class="seg" data-group="reps">
+        ${[[5, 8], [6, 10], [8, 12], [10, 15], [12, 20]].map(([a, b]) =>
+          `<button data-val="${a}-${b}" class="${a === tgt.min && b === tgt.max ? "on" : ""}">${a}–${b}</button>`).join("")}
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Muskelgruppe</div>
+      <div class="chips" data-group="muscle">
+        ${MUSCLES.map(m => `<button data-val="${m}" class="${ex.muscle === m ? "on" : ""}">${m}</button>`).join("")}
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Notiz</div>
+      ${ex.note
+        ? `<div class="note note-ex" style="margin:0" data-act="note">📌<span>${escapeHtml(ex.note)}</span></div>`
+        : `<button class="note note-ex empty" style="margin:0" data-act="note">📌<span>Notiz hinzufügen</span></button>`}
+    </div>
+
+    ${st.rows.length ? `<div class="field">
+      <div class="field-label">Verlauf</div>
+      ${st.rows.slice(0, 12).map(r => `
+        <div class="progress-row">
+          <span class="p-date">${fmtDateShort(r.date)}</span>
+          <span style="text-align:right">${setsSummary(r.sets, true)}</span>
+        </div>`).join("")}
+    </div>` : ""}
+  `;
+
+  const sheet = openSheet("Übung", html);
+  sheet.addEventListener("click", e => {
+    const seg = e.target.closest("[data-group] button");
+    if (seg) {
+      const group = seg.closest("[data-group]").dataset.group;
+      if (group === "sets") ex.targetSets = +seg.dataset.val;
+      else if (group === "reps") {
+        const [a, b] = seg.dataset.val.split("-").map(Number);
+        ex.repMin = a; ex.repMax = b;
+      } else if (group === "muscle") {
+        if (ex.muscle === seg.dataset.val) delete ex.muscle; else ex.muscle = seg.dataset.val;
+      }
+      save();
+      sheet.remove();
+      openExerciseSheet(id);
+      render();
+      return;
+    }
+    const act = e.target.closest("[data-act]");
+    if (!act) return;
+    sheet.remove();
+    if (act.dataset.act === "rename") renameExercise(id);
+    else if (act.dataset.act === "note") editExerciseNote(id);
+    else if (act.dataset.act === "photo") photo ? viewPhoto(id) : pickPhoto(id);
+  });
+}
+
+function openSettings() {
+  const s = state.settings;
+  const toggle = (key, label, sub) => `
+    <div class="toggle-row">
+      <div><div>${label}</div><div class="tr-sub">${sub}</div></div>
+      <div class="switch ${s[key] ? "on" : ""}" data-toggle="${key}"></div>
+    </div>`;
+
+  const html = `
+    <div class="field">
+      <div class="field-label">Pausenzeit zwischen den Sätzen</div>
+      <div class="seg" data-group="rest">
+        ${[45, 60, 90, 120, 180].map(n =>
+          `<button data-val="${n}" class="${n === s.restSeconds ? "on" : ""}">${n < 60 ? n + " s" : (n / 60) + " min"}</button>`).join("")}
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Standard-Anzahl Sätze bei neuen Übungen</div>
+      <div class="seg" data-group="defsets">
+        ${[2, 3, 4, 5].map(n => `<button data-val="${n}" class="${n === s.defaultSets ? "on" : ""}">${n}</button>`).join("")}
+      </div>
+    </div>
+    ${toggle("autoRest", "Pausentimer automatisch starten", "Startet, sobald du einen Satz abhakst.")}
+    ${toggle("sound", "Ton am Ende der Pause", "Kurzer Signalton.")}
+    ${toggle("vibrate", "Vibration am Ende der Pause", "Funktioniert nicht auf allen iPhones.")}
+    ${toggle("showRpe", "RPE-Feld anzeigen", "Anstrengung von 5 bis 10 pro Satz. Fließt in die Empfehlung ein.")}
+  `;
+
+  const sheet = openSheet("Einstellungen", html);
+  sheet.addEventListener("click", e => {
+    const seg = e.target.closest("[data-group] button");
+    if (seg) {
+      const group = seg.closest("[data-group]").dataset.group;
+      if (group === "rest") s.restSeconds = +seg.dataset.val;
+      else if (group === "defsets") s.defaultSets = +seg.dataset.val;
+      save();
+      sheet.remove();
+      openSettings();
+      return;
+    }
+    const tg = e.target.closest("[data-toggle]");
+    if (tg) {
+      const key = tg.dataset.toggle;
+      s[key] = !s[key];
+      tg.classList.toggle("on", !!s[key]);
+      if (key === "sound" && s[key]) { primeAudio(); beep(); }
+      save();
+      render();
+    }
+  });
 }
 
 /* ============ Übungs-Auswahl (Modal) ============ */
@@ -1455,12 +2204,14 @@ async function deleteExerciseFlow(id) {
   save();
 }
 
-function openExercisePicker() {
+// swapIndex gesetzt → die Übung an dieser Stelle wird ersetzt, die Sätze bleiben stehen
+function openExercisePicker(swapIndex = null) {
+  const swapping = swapIndex !== null;
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop";
   backdrop.innerHTML = `
     <div class="modal">
-      <h2>Übung hinzufügen</h2>
+      <h2>${swapping ? "Übung tauschen" : "Übung hinzufügen"}</h2>
       <input type="text" id="ex-search" placeholder="Name der Übung eingeben …" autocomplete="off">
       <div class="exercise-list" id="ex-list"></div>
     </div>`;
@@ -1473,6 +2224,7 @@ function openExercisePicker() {
   const renderList = () => {
     const q = search.value.trim().toLowerCase();
     const inWorkout = new Set(state.active.entries.map(e => e.exerciseId));
+    if (swapping) inWorkout.delete(state.active.entries[swapIndex].exerciseId);
     const matches = state.exercises
       .filter(e => !e.archived && !inWorkout.has(e.id) && e.name.toLowerCase().includes(q))
       .sort((a, b) => a.name.localeCompare(b.name, "de"));
@@ -1518,7 +2270,14 @@ function openExercisePicker() {
     } else {
       id = btn.dataset.id;
     }
-    state.active.entries.push({ exerciseId: id, sets: [] });
+    if (swapping) {
+      // Sätze und Notiz bleiben stehen, nur die Übung dahinter wechselt
+      state.active.entries[swapIndex].exerciseId = id;
+    } else {
+      const entry = { exerciseId: id, sets: [] };
+      state.active.entries.push(entry);
+      fillTargetSets(entry);
+    }
     save();
     backdrop.remove();
     render();
@@ -1543,7 +2302,7 @@ function viewHistory() {
         ${w.entries.map(e => `
           <div class="history-ex">
             <div class="history-ex-name">${escapeHtml(exName(e.exerciseId))}</div>
-            <div class="history-ex-sets">${setsSummary(e.sets)}</div>
+            <div class="history-ex-sets">${setsSummary(e.sets, true)}</div>
             ${e.note ? `<div class="history-ex-note">✎ ${escapeHtml(e.note)}</div>` : ""}
           </div>`).join("")}
         <button class="del-workout" onclick="event.stopPropagation();deleteWorkout('${w.id}')">Training löschen</button>
@@ -1551,7 +2310,7 @@ function viewHistory() {
     return `
       <div class="card history-item" onclick="toggleWorkout('${w.id}')">
         <div class="history-date">${fmtDate(w.start)}</div>
-        <div class="history-meta">${w.entries.length} Übungen · ${w.entries.reduce((n, e) => n + e.sets.length, 0)} Sätze · ${fmtDuration(w.end - w.start)}</div>
+        <div class="history-meta">${w.entries.length} Übungen · ${w.entries.reduce((n, e) => n + workSets(e.sets).length, 0)} Sätze · ${fmtDuration(w.end - w.start)}</div>
         ${details}
       </div>`;
   }).join("");
@@ -1594,13 +2353,21 @@ function viewProgress() {
     .map(w => {
       const entry = w.entries.find(e => e.exerciseId === progressExercise);
       if (!entry) return null;
-      const best = entry.sets.reduce((m, s) => s.weight > m.weight ? s : m, entry.sets[0]);
-      const volume = entry.sets.reduce((v, s) => v + s.weight * s.reps, 0);
-      return { date: w.start, best, volume, sets: entry.sets };
+      const sets = workSets(entry.sets);
+      if (!sets.length) return null;
+      const best = sets.reduce((m, s) => s.weight > m.weight ? s : m, sets[0]);
+      return { date: w.start, best, volume: setVolume(sets), sets };
     })
     .filter(Boolean);
 
+  if (!history.length) {
+    return `<div class="sys-h">Analyse</div><h1>Fortschritt</h1>
+      <select onchange="progressExercise=this.value;render()">${options}</select>
+      <div class="empty-state">Für diese Übung sind nur Aufwärmsätze gespeichert.</div>`;
+  }
+
   const maxWeight = Math.max(...history.map(h => h.best.weight));
+  const stats = exerciseStats(progressExercise);
 
   const rows = [...history].reverse().map(h => `
     <div class="progress-row">
@@ -1625,6 +2392,11 @@ function viewProgress() {
     <p class="subtitle">Bester Satz pro Training</p>
     <select onchange="progressExercise=this.value;render()">${options}</select>
     ${infoHtml}
+    <div class="kv-grid">
+      <div class="kv"><div class="kv-val">${fmtWeight(stats.maxWeight)}</div><div class="kv-lbl">Bestes Gewicht</div></div>
+      <div class="kv"><div class="kv-val">${fmtWeight(Math.round(stats.maxOneRm * 2) / 2)}</div><div class="kv-lbl">Geschätztes 1RM</div></div>
+    </div>
+    <button class="btn btn-ghost" style="margin-bottom:8px" onclick="openExerciseSheet('${progressExercise}')">Details &amp; Ziele öffnen</button>
     ${history.length >= 2 ? `<div class="card chart-wrap">${chartSvg(history)}</div>` : ""}
     <div class="card">${rows}</div>
   `;
