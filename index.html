@@ -966,6 +966,166 @@
   .best-badge { color: var(--gold); font-weight: 700; text-shadow: 0 0 12px rgba(255, 204, 85, 0.4); }
   .chart-wrap { margin-bottom: 8px; }
 
+  /* ---------- Wochenplan & Trainingstage ---------- */
+  .today-card {
+    position: relative;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background:
+      linear-gradient(180deg, rgba(79, 216, 255, 0.1), transparent 55%),
+      var(--card);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 30px rgba(79, 216, 255, 0.09);
+  }
+  .today-tag {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .today-name {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    margin-bottom: 3px;
+    overflow-wrap: anywhere;
+  }
+  .today-sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.45; }
+  .streak-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .streak {
+    flex: 1;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 6px;
+    text-align: center;
+  }
+  .streak-val { font-family: var(--mono); font-size: 16px; font-weight: 800; color: var(--accent); }
+  .streak-lbl {
+    font-family: var(--mono);
+    font-size: 8.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    margin-top: 4px;
+  }
+  .plan-day {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 15px;
+  }
+  .plan-day:last-child { border-bottom: none; }
+  .plan-day.today { background: rgba(79, 216, 255, 0.06); }
+  .pd-wd {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    width: 30px;
+    flex-shrink: 0;
+  }
+  .plan-day.today .pd-wd { color: var(--accent); font-weight: 700; }
+  .pd-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 10px currentColor;
+  }
+  .pd-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .pd-rest { color: var(--muted); }
+  .pd-chevron { color: var(--muted); font-size: 13px; }
+  .tpl-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 13px 4px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .tpl-row:last-of-type { border-bottom: none; }
+  .tpl-bar {
+    width: 3px;
+    align-self: stretch;
+    border-radius: 2px;
+    flex-shrink: 0;
+    box-shadow: 0 0 10px currentColor;
+    background: currentColor;
+  }
+  .tpl-row-name { font-weight: 700; font-size: 15.5px; overflow-wrap: anywhere; }
+  .tpl-row-sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+  /* ---------- Kalender ---------- */
+  .cal-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .cal-title {
+    flex: 1;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .cal-nav {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 15px;
+    width: 32px; height: 32px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+  .cal-wd {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.06em;
+    padding-bottom: 4px;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: none;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: default;
+    padding: 0;
+  }
+  .cal-day.has { color: var(--text); background: var(--card2); border-color: var(--border); cursor: pointer; }
+  .cal-day.today { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .cal-day.sel { background: rgba(79, 216, 255, 0.18); border-color: var(--accent); }
+  .cal-dots { display: flex; gap: 2px; height: 5px; }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
   .empty-state {
     text-align: center;
     color: var(--muted);
@@ -993,6 +1153,7 @@
   </div>
   <nav id="nav">
     <button data-tab="home"><span class="icon">🏋️</span>Training</button>
+    <button data-tab="plan"><span class="icon">🗓️</span>Plan</button>
     <button data-tab="history"><span class="icon">📅</span>Verlauf</button>
     <button data-tab="progress"><span class="icon">📈</span>Fortschritt</button>
   </nav>
@@ -1007,6 +1168,7 @@
 const STORAGE_KEY = "gymtracker-v1";
 const SAFETY_KEY = "gymtracker-v1-pre-v2";   // unangetastete Kopie vor der ersten Migration
 const DATA_VERSION = 2;
+const TPL_COLORS = ["#4fd8ff", "#8b5cff", "#ffcc55", "#ff6ec7", "#45e6a0", "#ff9a4f"];
 
 let state = load();
 
@@ -1021,6 +1183,11 @@ function migrate(data) {
     { restSeconds: 90, sound: true, vibrate: true, autoRest: true, showRpe: false, defaultSets: 3 },
     data.settings || {});
   data.plan = data.plan || { days: {} };
+  data.plan.days = data.plan.days || {};
+  data.templates.forEach((t, i) => {
+    if (!t.color) t.color = TPL_COLORS[i % TPL_COLORS.length];
+    t.exerciseIds = t.exerciseIds || [];
+  });
   data.workouts.forEach(w => {
     if (!w.type) w.type = "strength";
     (w.entries || []).forEach(e => { e.sets = e.sets || []; });
@@ -1185,6 +1352,10 @@ function recommendation(exerciseId) {
 
 function fmtNum(n) {
   return (Math.round(n * 10) / 10).toString().replace(".", ",");
+}
+
+function fmtCount(n, one, many) {
+  return `${n} ${n === 1 ? one : many}`;
 }
 
 function escapeHtml(str) {
@@ -1479,38 +1650,156 @@ function render(animate = false) {
   main.classList.toggle("anim", animate);
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   if (currentTab === "home") main.innerHTML = state.active ? viewWorkout() : viewHome();
+  else if (currentTab === "plan") main.innerHTML = viewPlan();
   else if (currentTab === "history") main.innerHTML = viewHistory();
   else main.innerHTML = viewProgress();
   if (currentTab === "home" && state.active) startTimer();
 }
 
+/* ============ Wochenplan: Hilfsfunktionen ============ */
+const WD_SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const WD_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
+
+// 1 = Montag … 7 = Sonntag
+function isoDay(ts) {
+  const n = new Date(ts).getDay();
+  return n === 0 ? 7 : n;
+}
+
+function dayKey(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function template(id) {
+  return (state.templates || []).find(t => t.id === id) || null;
+}
+
+function tplColor(t) {
+  return (t && t.color) || "#4fd8ff";
+}
+
+function planFor(dayNo) {
+  const v = state.plan.days[dayNo];
+  if (v === "rest") return { rest: true };
+  const t = v ? template(v) : null;
+  return t ? { tpl: t } : {};
+}
+
+function workoutsOnDay(ts) {
+  const k = dayKey(ts);
+  return state.workouts.filter(w => dayKey(w.start) === k);
+}
+
+// Sommer-/Winterzeit sicher über Date rechnen, nicht über Millisekunden
+function startOfWeek(ts) {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - (isoDay(d) - 1));
+  return d.getTime();
+}
+
+function shiftWeeks(ts, n) {
+  const d = new Date(ts);
+  d.setDate(d.getDate() + n * 7);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function workoutsInWeek(weekStart) {
+  const end = shiftWeeks(weekStart, 1);
+  return state.workouts.filter(w => w.start >= weekStart && w.start < end);
+}
+
+// Wie viele Wochen am Stück wurde trainiert? Die laufende Woche zählt erst mit,
+// sobald sie eine Einheit hat – sonst wäre die Serie am Montag immer weg.
+function weekStreak() {
+  let ws = startOfWeek(Date.now());
+  if (!workoutsInWeek(ws).length) ws = shiftWeeks(ws, -1);
+  let n = 0;
+  while (workoutsInWeek(ws).length) { n++; ws = shiftWeeks(ws, -1); }
+  return n;
+}
+
+function plannedDaysPerWeek() {
+  return [1, 2, 3, 4, 5, 6, 7].filter(d => planFor(d).tpl).length;
+}
+
 /* ============ Ansicht: Start ============ */
 function viewHome() {
-  const templates = state.templates || [];
-  const tplHtml = templates.map(t => {
-    const names = t.exerciseIds
+  const today = isoDay(Date.now());
+  const p = planFor(today);
+  const doneToday = workoutsOnDay(Date.now()).length;
+  const planned = plannedDaysPerWeek();
+  const thisWeek = workoutsInWeek(startOfWeek(Date.now())).length;
+
+  let todayHtml;
+  if (p.tpl) {
+    const names = p.tpl.exerciseIds
       .filter(x => state.exercises.some(e => e.id === x && !e.archived))
-      .map(exName).join(", ") || "Keine Übungen mehr vorhanden";
-    return `
-      <div class="card template-card" onclick="startFromTemplate('${t.id}')">
-        <div class="tpl-info">
-          <div class="history-date">▶ ${escapeHtml(t.name)}</div>
-          <div class="history-meta tpl-names">${escapeHtml(names)}</div>
-        </div>
-        <button class="opt-del" onclick="event.stopPropagation();deleteTemplate('${t.id}')">✕</button>
+      .map(exName).join(" · ") || "Noch keine Übungen hinterlegt";
+    todayHtml = `
+      <div class="today-card" style="color:${tplColor(p.tpl)}">
+        <div class="today-tag" style="color:inherit">Heute · ${WD_LONG[today - 1]}</div>
+        <div class="today-name" style="color:var(--text)">${escapeHtml(p.tpl.name)}</div>
+        <div class="today-sub">${escapeHtml(names)}</div>
+        ${doneToday ? `<p class="today-sub" style="color:var(--accent)">✓ Heute schon trainiert – noch eine Einheit?</p>` : ""}
+        <button class="btn btn-primary" onclick="startFromTemplate('${p.tpl.id}')">Training starten</button>
       </div>`;
-  }).join("");
+  } else if (p.rest) {
+    todayHtml = `
+      <div class="today-card">
+        <div class="today-tag">Heute · ${WD_LONG[today - 1]}</div>
+        <div class="today-name">Ruhetag</div>
+        <div class="today-sub">Erholung gehört zum Plan. Muskeln wachsen in der Pause.</div>
+        <button class="btn btn-secondary" onclick="startWorkout()">Trotzdem trainieren</button>
+      </div>`;
+  } else {
+    todayHtml = `
+      <div class="today-card">
+        <div class="today-tag">Heute · ${WD_LONG[today - 1]}</div>
+        <div class="today-name">Freies Training</div>
+        <div class="today-sub">Für heute ist nichts eingeplant. Im Reiter „Plan" kannst du dir eine Woche zusammenstellen.</div>
+        <button class="btn btn-primary" onclick="startWorkout()">Training starten</button>
+      </div>`;
+  }
+
+  const streakHtml = state.workouts.length ? `
+    <div class="streak-row">
+      <div class="streak"><div class="streak-val">${weekStreak()}</div><div class="streak-lbl">Wochen Serie</div></div>
+      <div class="streak"><div class="streak-val">${thisWeek}${planned ? "/" + planned : ""}</div><div class="streak-lbl">Diese Woche</div></div>
+      <div class="streak"><div class="streak-val">${state.workouts.length}</div><div class="streak-lbl">Trainings gesamt</div></div>
+    </div>` : "";
+
+  const others = (state.templates || []).filter(t => !p.tpl || t.id !== p.tpl.id);
+  const othersHtml = others.length ? `
+    <div class="sys-h" style="margin:22px 0 6px">Anderes Training</div>
+    <div class="card" style="padding:4px 14px">
+      ${others.map(t => `
+        <div class="tpl-row" onclick="startFromTemplate('${t.id}')">
+          <div class="tpl-bar" style="color:${tplColor(t)}"></div>
+          <div style="flex:1;min-width:0">
+            <div class="tpl-row-name">${escapeHtml(t.name)}</div>
+            <div class="tpl-row-sub">${fmtCount(t.exerciseIds.length, "Übung", "Übungen")}</div>
+          </div>
+          <span class="pd-chevron">▶</span>
+        </div>`).join("")}
+    </div>
+    ${p.tpl || p.rest ? "" : ""}` : "";
 
   const recent = [...state.workouts].sort((a, b) => b.start - a.start).slice(0, 3);
-  let recentHtml = "";
-  if (recent.length) {
-    recentHtml = `<div class="sys-h" style="margin:24px 0 8px">Letzte Einheiten</div>` +
-      recent.map(w => `
-        <div class="card" style="padding:12px 16px">
-          <div class="history-date">${fmtDate(w.start)}</div>
-          <div class="history-meta">${w.entries.length} Übungen · ${fmtDuration(w.end - w.start)}</div>
-        </div>`).join("");
-  }
+  const recentHtml = recent.length ? `
+    <div class="sys-h" style="margin:22px 0 8px">Letzte Einheiten</div>` +
+    recent.map(w => `
+      <div class="card" style="padding:12px 16px">
+        <div class="history-date">${fmtDate(w.start)}</div>
+        <div class="history-meta">${fmtCount(w.entries.length, "Übung", "Übungen")} · ${fmtDuration(w.end - w.start)}</div>
+      </div>`).join("") : `
+    <div class="empty-state">
+      <div class="big">💪</div>
+      Noch keine Trainings.<br>Starte jetzt dein erstes!
+    </div>`;
+
   return `
     <div class="head-block">
       <button class="icon-btn" style="position:absolute;top:-2px;right:-6px;font-size:20px" title="Einstellungen" onclick="openSettings()">⚙</button>
@@ -1518,19 +1807,188 @@ function viewHome() {
       <h1>Gym Tracker</h1>
       <p class="subtitle">Bereit für dein Training?</p>
     </div>
-    ${tplHtml}
-    <button class="btn btn-primary" onclick="startWorkout()">${templates.length ? "Freies Training starten" : "Training starten"}</button>
-    ${recentHtml || `
-      <div class="empty-state">
-        <div class="big">💪</div>
-        Noch keine Trainings.<br>Starte jetzt dein erstes!
-      </div>`}
+    ${streakHtml}
+    ${todayHtml}
+    ${p.tpl || p.rest ? `<button class="btn btn-ghost" onclick="startWorkout()">Freies Training starten</button>` : ""}
+    ${othersHtml}
+    ${recentHtml}
     <div class="backup-row">
       <button class="btn-link" onclick="exportData()">Daten sichern</button>
       <span style="color:var(--muted)">·</span>
       <button class="btn-link" onclick="importData()">Backup laden</button>
     </div>
   `;
+}
+
+/* ============ Ansicht: Plan ============ */
+function viewPlan() {
+  const today = isoDay(Date.now());
+  const templates = state.templates || [];
+
+  const daysHtml = [1, 2, 3, 4, 5, 6, 7].map(d => {
+    const p = planFor(d);
+    const body = p.tpl
+      ? `<span class="pd-dot" style="color:${tplColor(p.tpl)};background:currentColor"></span>
+         <span class="pd-name">${escapeHtml(p.tpl.name)}</span>`
+      : p.rest
+        ? `<span class="pd-name pd-rest">Ruhetag</span>`
+        : `<span class="pd-name pd-rest">– nichts eingeplant –</span>`;
+    return `<div class="plan-day ${d === today ? "today" : ""}" onclick="openDayPicker(${d})">
+        <span class="pd-wd">${WD_SHORT[d - 1]}</span>${body}<span class="pd-chevron">›</span>
+      </div>`;
+  }).join("");
+
+  const tplHtml = templates.length ? templates.map(t => `
+    <div class="tpl-row" onclick="openTemplateSheet('${t.id}')">
+      <div class="tpl-bar" style="color:${tplColor(t)}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="tpl-row-name">${escapeHtml(t.name)}</div>
+        <div class="tpl-row-sub">${fmtCount(t.exerciseIds.length, "Übung", "Übungen")} · ${t.exerciseIds.map(exName).join(", ") || "noch leer"}</div>
+      </div>
+      <span class="pd-chevron">›</span>
+    </div>`).join("") : `<div class="empty-state" style="padding:20px 8px">Noch keine Trainingstage.<br>Leg unten deinen ersten an.</div>`;
+
+  return `
+    <div class="sys-h">Plan プラン</div>
+    <h1>Wochenplan</h1>
+    <p class="subtitle">Welcher Trainingstag liegt auf welchem Wochentag?</p>
+    <div class="card" style="padding:6px 14px">${daysHtml}</div>
+
+    <div class="sys-h" style="margin:22px 0 6px">Trainingstage</div>
+    <div class="card" style="padding:6px 14px">${tplHtml}</div>
+    <button class="btn btn-secondary" onclick="createTemplate()">+ Trainingstag anlegen</button>
+    ${templates.length ? "" : `
+      <div class="sys-h" style="margin:22px 0 6px">Fertige Vorschläge</div>
+      <button class="btn btn-ghost" onclick="applyPreset('ppl')">Push / Pull / Beine (3× pro Woche)</button>
+      <button class="btn btn-ghost" onclick="applyPreset('ou')">Oberkörper / Unterkörper (4× pro Woche)</button>
+      <button class="btn btn-ghost" onclick="applyPreset('gk')">Ganzkörper (3× pro Woche)</button>`}
+  `;
+}
+
+function openDayPicker(dayNo) {
+  const cur = state.plan.days[dayNo] || null;
+  const items = (state.templates || []).map(t =>
+    `<button class="sheet-btn" data-val="${t.id}">
+       <span class="sb-icon" style="color:${tplColor(t)}">●</span>${escapeHtml(t.name)}${cur === t.id ? " ✓" : ""}
+     </button>`).join("");
+  const sheet = openSheet(WD_LONG[dayNo - 1], `
+    ${items || `<p class="empty-state" style="padding:14px 0">Noch keine Trainingstage angelegt.</p>`}
+    <button class="sheet-btn" data-val="rest"><span class="sb-icon">😴</span>Ruhetag${cur === "rest" ? " ✓" : ""}</button>
+    <button class="sheet-btn" data-val=""><span class="sb-icon">–</span>Nichts eingeplant${!cur ? " ✓" : ""}</button>
+  `);
+  sheet.addEventListener("click", e => {
+    const btn = e.target.closest("[data-val]");
+    if (!btn) return;
+    const v = btn.dataset.val;
+    if (v) state.plan.days[dayNo] = v; else delete state.plan.days[dayNo];
+    save();
+    sheet.remove();
+    render();
+  });
+}
+
+async function createTemplate() {
+  const name = await showPrompt("Neuer Trainingstag", "z. B. Push, Beine, Ganzkörper A");
+  if (!name) return;
+  const t = { id: uid(), name, color: TPL_COLORS[state.templates.length % TPL_COLORS.length], exerciseIds: [] };
+  state.templates.push(t);
+  save();
+  render();
+  openTemplateSheet(t.id);
+}
+
+function openTemplateSheet(id) {
+  const t = template(id);
+  if (!t) return;
+  const exHtml = t.exerciseIds.length ? t.exerciseIds.map((exId, i) => `
+    <div class="tpl-row" style="cursor:default">
+      <div style="flex:1;min-width:0">
+        <div class="tpl-row-name" style="font-size:15px">${escapeHtml(exName(exId))}</div>
+        <div class="tpl-row-sub">Ziel ${targetOf(exId).sets} × ${targetOf(exId).min}–${targetOf(exId).max} Wdh.</div>
+      </div>
+      ${i > 0 ? `<button class="icon-btn" data-move="${i}" data-dir="-1">⬆</button>` : ""}
+      ${i < t.exerciseIds.length - 1 ? `<button class="icon-btn" data-move="${i}" data-dir="1">⬇</button>` : ""}
+      <button class="icon-btn" data-rm="${i}">✕</button>
+    </div>`).join("") : `<p class="empty-state" style="padding:14px 0">Noch keine Übungen.</p>`;
+
+  const sheet = openSheet(t.name, `
+    <div class="field">
+      <div class="field-label">Farbe</div>
+      <div class="chips" data-group="color">
+        ${TPL_COLORS.map(c => `<button data-val="${c}" class="${c === tplColor(t) ? "on" : ""}"
+          style="background:${c}22;border-color:${c === tplColor(t) ? c : "var(--border)"};color:${c}">●</button>`).join("")}
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Übungen</div>
+      ${exHtml}
+    </div>
+    <button class="sheet-btn" data-act="add"><span class="sb-icon">＋</span>Übung hinzufügen</button>
+    <button class="sheet-btn" data-act="rename"><span class="sb-icon">✏️</span>Umbenennen</button>
+    <button class="sheet-btn danger" data-act="del"><span class="sb-icon">✕</span>Trainingstag löschen</button>
+  `);
+
+  const reopen = () => { sheet.remove(); save(); render(); openTemplateSheet(id); };
+
+  sheet.addEventListener("click", async e => {
+    const col = e.target.closest('[data-group="color"] button');
+    if (col) { t.color = col.dataset.val; reopen(); return; }
+    const mv = e.target.closest("[data-move]");
+    if (mv) {
+      const i = +mv.dataset.move, to = i + (+mv.dataset.dir);
+      [t.exerciseIds[i], t.exerciseIds[to]] = [t.exerciseIds[to], t.exerciseIds[i]];
+      reopen();
+      return;
+    }
+    const rm = e.target.closest("[data-rm]");
+    if (rm) { t.exerciseIds.splice(+rm.dataset.rm, 1); reopen(); return; }
+
+    const act = e.target.closest("[data-act]");
+    if (!act) return;
+    if (act.dataset.act === "add") {
+      sheet.remove();
+      const exId = await chooseExercise({ title: "Übung hinzufügen", exclude: new Set(t.exerciseIds) });
+      if (exId) t.exerciseIds.push(exId);
+      save();
+      render();
+      openTemplateSheet(id);
+    } else if (act.dataset.act === "rename") {
+      sheet.remove();
+      const name = await showPrompt("Trainingstag umbenennen", "Name", t.name);
+      if (name) { t.name = name; save(); render(); }
+      openTemplateSheet(id);
+    } else if (act.dataset.act === "del") {
+      sheet.remove();
+      await deleteTemplate(id);
+    }
+  });
+}
+
+const PRESETS = {
+  ppl: { days: { 1: "Push", 3: "Pull", 5: "Beine" } },
+  ou:  { days: { 1: "Oberkörper A", 2: "Unterkörper A", 4: "Oberkörper B", 5: "Unterkörper B" } },
+  gk:  { days: { 1: "Ganzkörper A", 3: "Ganzkörper B", 5: "Ganzkörper C" } }
+};
+
+async function applyPreset(key) {
+  const preset = PRESETS[key];
+  if (!preset) return;
+  const names = [...new Set(Object.values(preset.days))];
+  if (!await showConfirm(
+    `Trainingstage ${names.join(", ")} anlegen und auf die Woche verteilen? Die Übungen trägst du danach selbst ein.`,
+    "Anlegen")) return;
+  const byName = {};
+  names.forEach(n => {
+    let t = (state.templates || []).find(x => x.name.toLowerCase() === n.toLowerCase());
+    if (!t) {
+      t = { id: uid(), name: n, color: TPL_COLORS[state.templates.length % TPL_COLORS.length], exerciseIds: [] };
+      state.templates.push(t);
+    }
+    byName[n] = t.id;
+  });
+  Object.entries(preset.days).forEach(([d, n]) => { state.plan.days[d] = byName[n]; });
+  save();
+  render();
 }
 
 function startWorkout() {
@@ -1558,8 +2016,10 @@ function startFromTemplate(id) {
 async function deleteTemplate(id) {
   const t = (state.templates || []).find(x => x.id === id);
   if (!t) return;
-  if (!await showConfirm(`Vorlage „${t.name}" löschen? Deine Trainings im Verlauf bleiben erhalten.`, "Löschen", true)) return;
+  if (!await showConfirm(`Trainingstag „${t.name}" löschen? Deine Trainings im Verlauf bleiben erhalten.`, "Löschen", true)) return;
   state.templates = state.templates.filter(x => x.id !== id);
+  // aus dem Wochenplan mit entfernen, sonst zeigen Tage ins Leere
+  Object.keys(state.plan.days).forEach(d => { if (state.plan.days[d] === id) delete state.plan.days[d]; });
   save();
   render();
 }
@@ -1567,17 +2027,22 @@ async function deleteTemplate(id) {
 async function saveAsTemplate() {
   const w = state.active;
   if (!w || !w.entries.length) return;
-  const name = await showPrompt("Vorlage speichern", "Name, z. B. Training A");
+  const name = await showPrompt("Als Trainingstag speichern", "Name, z. B. Push, Training A");
   if (!name) return;
   state.templates = state.templates || [];
   const existing = state.templates.find(t => t.name.toLowerCase() === name.toLowerCase());
   if (existing) {
     existing.exerciseIds = w.entries.map(e => e.exerciseId);
   } else {
-    state.templates.push({ id: uid(), name, exerciseIds: w.entries.map(e => e.exerciseId) });
+    state.templates.push({
+      id: uid(),
+      name,
+      color: TPL_COLORS[state.templates.length % TPL_COLORS.length],
+      exerciseIds: w.entries.map(e => e.exerciseId)
+    });
   }
   save();
-  showAlert(`Vorlage „${name}" gespeichert ✓ Du findest sie auf der Startseite.`);
+  showAlert(`„${name}" gespeichert ✓ Im Reiter „Plan" kannst du ihn auf einen Wochentag legen.`);
 }
 
 /* ============ Ansicht: Aktives Training ============ */
@@ -2204,91 +2669,149 @@ async function deleteExerciseFlow(id) {
   save();
 }
 
-// swapIndex gesetzt → die Übung an dieser Stelle wird ersetzt, die Sätze bleiben stehen
-function openExercisePicker(swapIndex = null) {
-  const swapping = swapIndex !== null;
-  const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop";
-  backdrop.innerHTML = `
-    <div class="modal">
-      <h2>${swapping ? "Übung tauschen" : "Übung hinzufügen"}</h2>
-      <input type="text" id="ex-search" placeholder="Name der Übung eingeben …" autocomplete="off">
-      <div class="exercise-list" id="ex-list"></div>
-    </div>`;
-  backdrop.addEventListener("click", e => { if (e.target === backdrop) backdrop.remove(); });
-  document.body.appendChild(backdrop);
-
-  const search = backdrop.querySelector("#ex-search");
-  const list = backdrop.querySelector("#ex-list");
-
-  const renderList = () => {
-    const q = search.value.trim().toLowerCase();
-    const inWorkout = new Set(state.active.entries.map(e => e.exerciseId));
-    if (swapping) inWorkout.delete(state.active.entries[swapIndex].exerciseId);
-    const matches = state.exercises
-      .filter(e => !e.archived && !inWorkout.has(e.id) && e.name.toLowerCase().includes(q))
-      .sort((a, b) => a.name.localeCompare(b.name, "de"));
-    let html = matches.map(e => {
-      const last = lastPerformance(e.id);
-      const photo = photoCache.get(e.id);
-      return `<div class="exercise-option" data-id="${e.id}">
-        ${photo ? `<img class="opt-thumb" src="${photo}" alt="">` : ""}
-        <span>${escapeHtml(e.name)}
-          ${last ? `<span class="opt-last">Letztes Mal: ${setsSummary(last.sets)}</span>` : ""}
-          ${e.note ? `<span class="opt-note">📌 ${escapeHtml(e.note)}</span>` : ""}
-        </span>
-        <button class="opt-edit" data-rename="${e.id}" title="Umbenennen">✏️</button>
-        <button class="opt-del" data-del="${e.id}" title="Übung löschen">✕</button>
+// Wiederverwendbare Übungsauswahl. Liefert die gewählte Übungs-ID
+// oder null, wenn abgebrochen wurde. Neue Übungen entstehen direkt beim Tippen.
+function chooseExercise(opts = {}) {
+  const title = opts.title || "Übung hinzufügen";
+  const exclude = opts.exclude || new Set();
+  return new Promise(resolve => {
+    const backdrop = document.createElement("div");
+    backdrop.className = "modal-backdrop";
+    backdrop.innerHTML = `
+      <div class="modal">
+        <h2>${escapeHtml(title)}</h2>
+        <input type="text" id="ex-search" placeholder="Name der Übung eingeben …" autocomplete="off">
+        <div class="exercise-list" id="ex-list"></div>
       </div>`;
-    }).join("");
-    if (q && !state.exercises.some(e => !e.archived && e.name.toLowerCase() === q)) {
-      html = `<button class="exercise-option create-new" data-create="1">+ „${escapeHtml(search.value.trim())}" neu erstellen</button>` + html;
-    }
-    list.innerHTML = html || `<div class="empty-state">Tippe oben den Namen ein,<br>um deine erste Übung anzulegen —<br>z. B. „Brustpresse 1".</div>`;
-  };
+    let settled = false;
+    const done = v => { if (settled) return; settled = true; backdrop.remove(); resolve(v); };
+    backdrop.addEventListener("click", e => { if (e.target === backdrop) done(null); });
+    document.body.appendChild(backdrop);
 
-  list.addEventListener("click", async e => {
-    const ren = e.target.closest("[data-rename]");
-    if (ren) {
-      await renameExercise(ren.dataset.rename);
-      renderList();
-      return;
-    }
-    const del = e.target.closest("[data-del]");
-    if (del) {
-      await deleteExerciseFlow(del.dataset.del);
-      renderList();
-      return;
-    }
-    const btn = e.target.closest(".exercise-option");
-    if (!btn) return;
-    let id;
-    if (btn.dataset.create) {
-      const name = search.value.trim();
-      id = uid();
-      state.exercises.push({ id, name });
-    } else {
-      id = btn.dataset.id;
-    }
-    if (swapping) {
-      // Sätze und Notiz bleiben stehen, nur die Übung dahinter wechselt
-      state.active.entries[swapIndex].exerciseId = id;
-    } else {
-      const entry = { exerciseId: id, sets: [] };
-      state.active.entries.push(entry);
-      fillTargetSets(entry);
-    }
-    save();
-    backdrop.remove();
-    render();
+    const search = backdrop.querySelector("#ex-search");
+    const list = backdrop.querySelector("#ex-list");
+
+    const renderList = () => {
+      const q = search.value.trim().toLowerCase();
+      const matches = state.exercises
+        .filter(e => !e.archived && !exclude.has(e.id) && e.name.toLowerCase().includes(q))
+        .sort((a, b) => a.name.localeCompare(b.name, "de"));
+      let html = matches.map(e => {
+        const last = lastPerformance(e.id);
+        const photo = photoCache.get(e.id);
+        return `<div class="exercise-option" data-id="${e.id}">
+          ${photo ? `<img class="opt-thumb" src="${photo}" alt="">` : ""}
+          <span>${escapeHtml(e.name)}
+            ${last ? `<span class="opt-last">Letztes Mal: ${setsSummary(last.sets)}</span>` : ""}
+            ${e.note ? `<span class="opt-note">📌 ${escapeHtml(e.note)}</span>` : ""}
+          </span>
+          <button class="opt-edit" data-rename="${e.id}" title="Umbenennen">✏️</button>
+          <button class="opt-del" data-del="${e.id}" title="Übung löschen">✕</button>
+        </div>`;
+      }).join("");
+      if (q && !state.exercises.some(e => !e.archived && e.name.toLowerCase() === q)) {
+        html = `<button class="exercise-option create-new" data-create="1">+ „${escapeHtml(search.value.trim())}" neu erstellen</button>` + html;
+      }
+      list.innerHTML = html || `<div class="empty-state">Tippe oben den Namen ein,<br>um deine erste Übung anzulegen —<br>z. B. „Brustpresse 1".</div>`;
+    };
+
+    list.addEventListener("click", async e => {
+      const ren = e.target.closest("[data-rename]");
+      if (ren) { await renameExercise(ren.dataset.rename); renderList(); return; }
+      const del = e.target.closest("[data-del]");
+      if (del) { await deleteExerciseFlow(del.dataset.del); renderList(); return; }
+      const btn = e.target.closest(".exercise-option");
+      if (!btn) return;
+      if (btn.dataset.create) {
+        const id = uid();
+        state.exercises.push({ id, name: search.value.trim() });
+        save();
+        done(id);
+      } else {
+        done(btn.dataset.id);
+      }
+    });
+
+    search.addEventListener("input", renderList);
+    renderList();
+    search.focus();
   });
+}
 
-  search.addEventListener("input", renderList);
-  renderList();
-  search.focus();
+// swapIndex gesetzt → die Übung an dieser Stelle wird ersetzt, die Sätze bleiben stehen
+async function openExercisePicker(swapIndex = null) {
+  const swapping = swapIndex !== null;
+  const exclude = new Set(state.active.entries.map(e => e.exerciseId));
+  if (swapping) exclude.delete(state.active.entries[swapIndex].exerciseId);
+  const id = await chooseExercise({ title: swapping ? "Übung tauschen" : "Übung hinzufügen", exclude });
+  if (!id) return;
+  if (swapping) {
+    // Sätze und Notiz bleiben stehen, nur die Übung dahinter wechselt
+    state.active.entries[swapIndex].exerciseId = id;
+  } else {
+    const entry = { exerciseId: id, sets: [] };
+    state.active.entries.push(entry);
+    fillTargetSets(entry);
+  }
+  save();
+  render();
 }
 
 /* ============ Ansicht: Verlauf ============ */
+let calMonth = null;   // { y, m } – null heißt: aktueller Monat
+
+function shiftMonth(delta) {
+  const base = calMonth || { y: new Date().getFullYear(), m: new Date().getMonth() };
+  const d = new Date(base.y, base.m + delta, 1);
+  calMonth = { y: d.getFullYear(), m: d.getMonth() };
+  render();
+}
+
+function calendarHtml() {
+  const now = new Date();
+  const { y, m } = calMonth || { y: now.getFullYear(), m: now.getMonth() };
+  const first = new Date(y, m, 1);
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const lead = isoDay(first) - 1;
+  const todayK = dayKey(now);
+
+  // Trainings des Monats nach Tag bündeln
+  const byDay = {};
+  state.workouts.forEach(w => {
+    const d = new Date(w.start);
+    if (d.getFullYear() === y && d.getMonth() === m) (byDay[d.getDate()] = byDay[d.getDate()] || []).push(w);
+  });
+
+  let cells = "";
+  for (let i = 0; i < lead; i++) cells += `<div class="cal-day"></div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const list = byDay[day] || [];
+    const k = dayKey(new Date(y, m, day));
+    const dots = list.slice(0, 3).map(w => {
+      const t = w.templateId ? template(w.templateId) : null;
+      return `<span class="cal-dot" style="background:${t ? tplColor(t) : "var(--accent)"}"></span>`;
+    }).join("");
+    cells += `<button class="cal-day ${list.length ? "has" : ""} ${k === todayK ? "today" : ""} ${list.length && expandedWorkout === list[0].id ? "sel" : ""}"
+      ${list.length ? `onclick="toggleWorkout('${list[0].id}')"` : ""}>
+      <span>${day}</span><span class="cal-dots">${dots}</span>
+    </button>`;
+  }
+
+  const monat = first.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  return `
+    <div class="card">
+      <div class="cal-head">
+        <button class="cal-nav" onclick="shiftMonth(-1)">‹</button>
+        <div class="cal-title">${monat}</div>
+        <button class="cal-nav" onclick="shiftMonth(1)">›</button>
+      </div>
+      <div class="cal-grid">
+        ${WD_SHORT.map(w => `<div class="cal-wd">${w}</div>`).join("")}
+        ${cells}
+      </div>
+    </div>`;
+}
+
 function viewHistory() {
   const sorted = [...state.workouts].sort((a, b) => b.start - a.start);
   if (!sorted.length) {
@@ -2307,14 +2830,17 @@ function viewHistory() {
           </div>`).join("")}
         <button class="del-workout" onclick="event.stopPropagation();deleteWorkout('${w.id}')">Training löschen</button>
       </div>` : "";
+    const tpl = w.templateId ? template(w.templateId) : null;
     return `
       <div class="card history-item" onclick="toggleWorkout('${w.id}')">
-        <div class="history-date">${fmtDate(w.start)}</div>
-        <div class="history-meta">${w.entries.length} Übungen · ${w.entries.reduce((n, e) => n + workSets(e.sets).length, 0)} Sätze · ${fmtDuration(w.end - w.start)}</div>
+        <div class="history-date">${tpl ? `<span style="color:${tplColor(tpl)}">●</span> ` : ""}${fmtDate(w.start)}${tpl ? ` · ${escapeHtml(tpl.name)}` : ""}</div>
+        <div class="history-meta">${fmtCount(w.entries.length, "Übung", "Übungen")} · ${fmtCount(w.entries.reduce((n, e) => n + workSets(e.sets).length, 0), "Satz", "Sätze")} · ${fmtDuration(w.end - w.start)}</div>
         ${details}
       </div>`;
   }).join("");
-  return `<div class="sys-h">Archiv</div><h1>Verlauf</h1><p class="subtitle">${sorted.length} Training${sorted.length === 1 ? "" : "s"} gespeichert</p>${items}`;
+  return `<div class="sys-h">Archiv アーカイブ</div><h1>Verlauf</h1>
+    <p class="subtitle">${sorted.length} Training${sorted.length === 1 ? "" : "s"} gespeichert</p>
+    ${calendarHtml()}${items}`;
 }
 
 function toggleWorkout(id) {
