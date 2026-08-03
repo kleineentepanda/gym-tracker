@@ -434,7 +434,7 @@
   }
 
   .sets { --cols: 30px 1fr 13px 1fr 34px 26px; }
-  .sets.with-rpe { --cols: 28px 1fr 11px 1fr 42px 32px 24px; }
+  .sets.with-rir { --cols: 28px 1fr 11px 1fr 42px 32px 24px; }
   .set-row, .set-labels {
     display: grid;
     grid-template-columns: var(--cols);
@@ -485,7 +485,7 @@
     background: rgba(79, 216, 255, 0.09);
   }
   /* Nie unter 16px – sonst zoomt iOS beim Antippen in das Feld hinein */
-  .set-rpe { font-size: 16px !important; }
+  .set-rir { font-size: 16px !important; }
   .set-x { color: var(--muted); text-align: center; font-size: 13px; }
   .set-check {
     background: none;
@@ -1179,28 +1179,40 @@ let state = load();
 // nur fehlende Felder werden ergänzt. Alte Backups bleiben dadurch importierbar.
 function migrate(data) {
   if (!data || typeof data !== "object") return data;
-  data.exercises = data.exercises || [];
-  data.workouts = data.workouts || [];
-  data.templates = data.templates || [];
+  // Fremde oder beschädigte Backups können statt Listen auch Unsinn enthalten.
+  // Alles, was keine Liste ist, wird zur leeren Liste – sonst knallt es später
+  // mitten im Zeichnen.
+  const arr = v => Array.isArray(v) ? v : [];
+  const obj = v => (v && typeof v === "object" && !Array.isArray(v)) ? v : {};
+
+  data.exercises = arr(data.exercises).filter(e => e && typeof e === "object");
+  data.workouts = arr(data.workouts).filter(w => w && typeof w === "object");
+  data.templates = arr(data.templates).filter(t => t && typeof t === "object");
   data.settings = Object.assign(
     { restSeconds: 90, sound: true, vibrate: true, autoRest: true, showRpe: false, defaultSets: 3 },
-    data.settings || {});
-  data.plan = data.plan || { days: {} };
-  data.plan.days = data.plan.days || {};
+    obj(data.settings));
+  data.plan = obj(data.plan);
+  data.plan.days = obj(data.plan.days);
   data.templates.forEach((t, i) => {
     if (!t.color) t.color = TPL_COLORS[i % TPL_COLORS.length];
     if (!t.kind) t.kind = "strength";
-    t.exerciseIds = t.exerciseIds || [];
+    t.exerciseIds = arr(t.exerciseIds);
   });
   data.exercises.forEach(e => { if (!e.kind) e.kind = "strength"; });
-  data.cardioActivities = data.cardioActivities || [];
+  data.cardioActivities = arr(data.cardioActivities);
+  const fixEntries = w => {
+    w.entries = arr(w.entries).filter(e => e && typeof e === "object");
+    w.entries.forEach(e => { e.sets = arr(e.sets).filter(s => s && typeof s === "object"); });
+  };
   data.workouts.forEach(w => {
     if (!w.type) w.type = "strength";
-    (w.entries || []).forEach(e => { e.sets = e.sets || []; });
+    fixEntries(w);
   });
-  if (data.active) {
+  if (data.active && typeof data.active === "object") {
     if (!data.active.type) data.active.type = "strength";
-    (data.active.entries || []).forEach(e => { e.sets = e.sets || []; });
+    fixEntries(data.active);
+  } else {
+    data.active = null;
   }
   data.version = DATA_VERSION;
   return data;
@@ -1232,7 +1244,17 @@ function load() {
   return migrate({ exercises: [], workouts: [], templates: [], active: null });
 }
 
+let saveTimer = null;
+
+// Beim Tippen läuft save() sonst bei jedem einzelnen Zeichen. Der Zustand im
+// Speicher stimmt trotzdem sofort – nur das Schreiben wird kurz gebündelt.
+function saveSoon() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { saveTimer = null; save(); }, 400);
+}
+
 function save() {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     saveFailed = false;
@@ -1284,12 +1306,23 @@ function fmtWeight(w) {
   return (w % 1 === 0 ? w : w.toFixed(1).replace(".", ",")) + " kg";
 }
 
+/* ---- Wiederholungen in Reserve (RIR) ----
+   Angezeigt und eingegeben wird RIR: 0 = keine Wiederholung ging mehr,
+   5 = locker. Gespeichert wird weiterhin RPE (5–10), weil alle bisherigen
+   Trainings und Backups so aufgebaut sind. RIR = 10 − RPE. */
+const RIR_MAX = 5;
+
+function rirOf(s) {
+  return s && typeof s.rpe === "number" ? 10 - s.rpe : null;
+}
+
 function setsSummary(sets, marks = false) {
   return (sets || []).map(s => {
     let t = `${String(s.weight).replace(".", ",")} kg × ${s.reps}`;
     if (marks) {
       if (s.warmup) t = "🔸" + t;
-      if (typeof s.rpe === "number") t += ` @${fmtNum(s.rpe)}`;
+      const rir = rirOf(s);
+      if (rir !== null) t += ` (${fmtNum(rir)} RIR)`;
     }
     return t;
   }).join("  ·  ");
@@ -1333,8 +1366,8 @@ function lastPerformance(exerciseId) {
 // Steigerungs-Empfehlung nach doppelter Progression im eingestellten Ziel-Bereich.
 // Alle Sätze am oberen Ende → mehr Gewicht, zurück ans untere Ende.
 // Sonst → gleiches Gewicht, eine Wiederholung mehr als der schwächste Satz.
-// Wenn RPE erfasst wurde, steuert es die Schrittgröße: locker → größerer Sprung,
-// am Anschlag → erst mal halten.
+// Wenn RIR erfasst wurde, steuert es die Schrittgröße: viel Reserve → größerer
+// Sprung, keine Reserve mehr → erst mal halten.
 function recommendation(exerciseId) {
   const last = lastPerformance(exerciseId);
   if (!last || !last.sets.length) return null;
@@ -1342,24 +1375,24 @@ function recommendation(exerciseId) {
   const tgt = targetOf(exerciseId);
   const top = sets.reduce((m, s) => s.weight > m.weight ? s : m, sets[0]);
   const minReps = Math.min(...sets.map(s => s.reps));
-  const rpes = sets.map(s => s.rpe).filter(r => typeof r === "number");
-  const avgRpe = rpes.length ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null;
+  const rirs = sets.map(rirOf).filter(r => r !== null);
+  const avgRir = rirs.length ? rirs.reduce((a, b) => a + b, 0) / rirs.length : null;
 
   if (top.weight === 0) {
     return { text: `${minReps + 1} Wdh. pro Satz`, why: "Körpergewicht – Steigerung über Wiederholungen" };
   }
-  if (avgRpe !== null && avgRpe >= 9.5) {
+  if (avgRir !== null && avgRir <= 0.5) {
     return {
       text: `${fmtWeight(top.weight)} × ${minReps} Wdh.`,
-      why: `letztes Mal RPE ${fmtNum(avgRpe)} – erst sauber wiederholen, dann steigern`
+      why: `letztes Mal war nichts mehr in Reserve – erst sauber wiederholen, dann steigern`
     };
   }
   if (sets.every(s => s.reps >= tgt.max)) {
-    const step = (avgRpe !== null && avgRpe <= 7) ? 1.05 : 1.025;
+    const step = (avgRir !== null && avgRir >= 3) ? 1.05 : 1.025;
     let nw = Math.ceil((top.weight * step) / 0.5) * 0.5;
     if (nw <= top.weight) nw = top.weight + 0.5;
     const pct = step === 1.05 ? "+5 %" : "+2,5 %";
-    const extra = step === 1.05 ? ` und RPE nur ${fmtNum(avgRpe)}` : "";
+    const extra = step === 1.05 ? ` und noch ${fmtNum(avgRir)} Wdh. in Reserve` : "";
     return {
       text: `${fmtWeight(nw)} × ${tgt.min} Wdh.`,
       why: `alle Sätze ≥ ${tgt.max} Wdh.${extra} → Zeit für mehr Gewicht (${pct})`
@@ -1386,8 +1419,12 @@ function workoutMeta(w) {
   if (kind === "cardio") {
     // Bei Cardio sind die eingetragenen Minuten die Wahrheit, nicht die Zeitspanne
     const c = w.cardio || {};
-    return [c.activity, c.minutes ? c.minutes + " Min." : fmtDuration(w.end - w.start),
-            c.distance ? fmtNum(c.distance) + " km" : null, c.intensity]
+    // Aktivität und Intensität sind selbst eingetippt – hier landet der Text
+    // direkt im HTML, also escapen
+    return [c.activity ? escapeHtml(c.activity) : null,
+            c.minutes ? c.minutes + " Min." : fmtDuration(w.end - w.start),
+            c.distance ? fmtNum(c.distance) + " km" : null,
+            c.intensity ? escapeHtml(c.intensity) : null]
       .filter(Boolean).join(" · ");
   }
   if (kind === "mobility") {
@@ -1508,7 +1545,13 @@ async function handleImportFile(file) {
     state = migrate(data.state);
     save();
     photoCache.clear();
-    Object.entries(data.photos || {}).forEach(([k, v]) => {
+    const photos = Object.entries(data.photos || {});
+    // Direkt nach dem Start ist die Foto-Datenbank evtl. noch nicht offen –
+    // dann wären die Fotos beim nächsten Öffnen der App wieder weg
+    if (photos.length && !photoDb) {
+      try { photoDb = await openPhotoDb(); } catch (e) { /* Fotos sind optional */ }
+    }
+    photos.forEach(([k, v]) => {
       photoCache.set(k, v);
       idbPutPhoto(k, v);
     });
@@ -2422,26 +2465,30 @@ function exerciseCardHtml(entry, ei) {
     ? `<div class="note note-ex" onclick="editExerciseNote('${entry.exerciseId}')">📌<span>${escapeHtml(note)}</span></div>`
     : `<button class="note note-ex empty" onclick="editExerciseNote('${entry.exerciseId}')">📌<span>Notiz zur Übung hinzufügen</span></button>`;
 
-  const showRpe = !!state.settings.showRpe;
+  const showRir = !!state.settings.showRpe;
   let workNo = 0;
   const setsHtml = entry.sets.map((s, si) => {
     if (!s.warmup) workNo++;
     const cls = "set-row" + (s.warmup ? " is-warmup" : "") + (s.done ? " is-done" : "");
-    const hintW = typeof s.hintW === "number" ? String(s.hintW).replace(".", ",") : "kg";
-    const hintR = typeof s.hintR === "number" ? String(s.hintR) : "Wdh.";
+    // Der Vorschlag wird bei jedem Zeichnen frisch berechnet, damit er immer
+    // zum zuletzt eingetragenen Satz passt
+    const hint = setHints(entry, si);
+    const hintW = typeof hint.w === "number" ? String(hint.w).replace(".", ",") : "kg";
+    const hintR = typeof hint.r === "number" ? String(hint.r) : "Wdh.";
+    const rir = rirOf(s);
     return `
       <div class="${cls}">
         <button class="set-num" title="Antippen für Aufwärmsatz" onclick="toggleWarmup(${ei},${si})">${s.warmup ? "A" : workNo}</button>
         <input type="text" inputmode="decimal" autocomplete="off" placeholder="${hintW}"
           value="${s.weight === "" ? "" : String(s.weight).replace(".", ",")}"
-          onchange="updateSet(${ei},${si},'weight',this.value)">
+          oninput="updateSet(${ei},${si},'weight',this.value)">
         <div class="set-x">×</div>
         <input type="text" inputmode="numeric" autocomplete="off" placeholder="${hintR}"
           value="${s.reps === "" || s.reps == null ? "" : s.reps}"
-          onchange="updateSet(${ei},${si},'reps',this.value)">
-        ${showRpe ? `<input class="set-rpe" type="text" inputmode="decimal" autocomplete="off" placeholder="RPE"
-          value="${typeof s.rpe === "number" ? fmtNum(s.rpe) : ""}"
-          onchange="updateSet(${ei},${si},'rpe',this.value)">` : ""}
+          oninput="updateSet(${ei},${si},'reps',this.value)">
+        ${showRir ? `<input class="set-rir" type="text" inputmode="numeric" autocomplete="off" placeholder="RIR"
+          value="${rir === null ? "" : fmtNum(rir)}"
+          oninput="updateSet(${ei},${si},'rir',this.value)">` : ""}
         <button class="set-check" title="Satz erledigt" onclick="toggleDone(${ei},${si})">✓</button>
         <button class="set-del" onclick="deleteSet(${ei},${si})">✕</button>
       </div>`;
@@ -2449,7 +2496,7 @@ function exerciseCardHtml(entry, ei) {
 
   const labels = `<div class="set-labels">
       <span>Satz</span><span>Gewicht</span><span></span><span>Wdh.</span>
-      ${showRpe ? "<span>RPE</span>" : ""}<span>✓</span><span></span>
+      ${showRir ? "<span>RIR</span>" : ""}<span>✓</span><span></span>
     </div>`;
 
   const dayNoteHtml = entry.note
@@ -2480,7 +2527,7 @@ function exerciseCardHtml(entry, ei) {
       ${noteHtml}
       ${lastHtml}
       ${recHtml}
-      ${entry.sets.length ? `<div class="sets${showRpe ? " with-rpe" : ""}">${labels}${setsHtml}</div>` : ""}
+      ${entry.sets.length ? `<div class="sets${showRir ? " with-rir" : ""}">${labels}${setsHtml}</div>` : ""}
       ${entry.sets.length ? `<div class="set-hint">Satznummer antippen = Aufwärmsatz · ✓ übernimmt den Vorschlag</div>` : ""}
       <button class="btn btn-ghost" style="width:auto;padding:8px 4px" onclick="addSet(${ei})">+ Satz hinzufügen</button>
       ${dayNoteHtml}
@@ -2534,16 +2581,19 @@ function startTimer() {
   timerInterval = setInterval(update, 1000);
 }
 
-// Vorschlagswerte für einen neuen Satz: erst der vorherige Satz dieses Trainings,
-// sonst das letzte Training. Sie stehen nur als grauer Platzhalter im Feld –
-// gespeichert wird erst, wenn getippt oder abgehakt wird.
+// Vorschlagswerte für einen Satz: erst der letzte ausgefüllte Satz dieses
+// Trainings, sonst das letzte Training. Sie stehen nur als grauer Platzhalter
+// im Feld – gespeichert wird erst, wenn getippt oder abgehakt wird.
+// Wird bei jedem Zeichnen neu gerufen, nie am Satz gespeichert. Sonst bliebe
+// der Vorschlag auf dem Stand von vor der Übung stehen.
 function setHints(entry, index) {
-  const prev = entry.sets.slice(0, index).filter(s => !s.warmup).pop();
-  if (prev && prev.weight !== "" && prev.reps !== "") return { hintW: prev.weight, hintR: prev.reps };
+  const before = entry.sets.slice(0, index).filter(s => !s.warmup);
+  const prev = before.filter(s => s.weight !== "" && s.reps !== "" && s.reps > 0).pop();
+  if (prev) return { w: prev.weight, r: prev.reps };
   const last = lastPerformance(entry.exerciseId);
   if (last && last.sets.length) {
-    const src = last.sets[Math.min(index, last.sets.length - 1)];
-    return { hintW: src.weight, hintR: src.reps };
+    const src = last.sets[Math.min(before.length, last.sets.length - 1)];
+    return { w: src.weight, r: src.reps };
   }
   return {};
 }
@@ -2551,14 +2601,11 @@ function setHints(entry, index) {
 // Beim Hinzufügen einer Übung direkt die Ziel-Sätze als leere Zeilen anlegen
 function fillTargetSets(entry) {
   const n = targetOf(entry.exerciseId).sets;
-  while (entry.sets.length < n) {
-    entry.sets.push(Object.assign({ weight: "", reps: "" }, setHints(entry, entry.sets.length)));
-  }
+  while (entry.sets.length < n) entry.sets.push({ weight: "", reps: "" });
 }
 
 function addSet(ei) {
-  const entry = state.active.entries[ei];
-  entry.sets.push(Object.assign({ weight: "", reps: "" }, setHints(entry, entry.sets.length)));
+  state.active.entries[ei].sets.push({ weight: "", reps: "" });
   save();
   render();
 }
@@ -2566,14 +2613,16 @@ function addSet(ei) {
 function updateSet(ei, si, field, value) {
   const s = state.active.entries[ei].sets[si];
   let num = parseFloat(String(value).replace(",", "."));
-  if (field === "rpe") {
-    s.rpe = isNaN(num) ? undefined : Math.min(10, Math.max(5, Math.round(num * 2) / 2));
-    if (s.rpe === undefined) delete s.rpe;
+  if (field === "rir") {
+    // Eingegeben wird RIR (0–5), gespeichert RPE (10 − RIR). Ein Wert außerhalb
+    // wird begrenzt statt still auf einen Standardwert gesetzt.
+    if (isNaN(num)) delete s.rpe;
+    else s.rpe = 10 - Math.min(RIR_MAX, Math.max(0, Math.round(num)));
   } else {
     if (!isNaN(num)) num = Math.abs(field === "reps" ? Math.round(num) : num);
     s[field] = isNaN(num) ? "" : num;
   }
-  save();
+  saveSoon();
 }
 
 function toggleWarmup(ei, si) {
@@ -2593,13 +2642,18 @@ function toggleDone(ei, si) {
     return;
   }
   primeAudio();
-  // Abhaken übernimmt den Vorschlag, wenn noch nichts eingetragen wurde
-  if (s.weight === "" && typeof s.hintW === "number") s.weight = s.hintW;
-  if (s.reps === "" && typeof s.hintR === "number") s.reps = s.hintR;
-  if (s.weight === "" || s.reps === "" || !s.reps) {
+  // Abhaken übernimmt den Vorschlag, wenn noch nichts eingetragen wurde.
+  // Erst beide Werte prüfen, dann schreiben – sonst bliebe bei fehlenden
+  // Wiederholungen ein halb übernommener Satz stehen.
+  const hint = setHints(entry, si);
+  const weight = s.weight === "" && typeof hint.w === "number" ? hint.w : s.weight;
+  const reps = (s.reps === "" || s.reps == null) && typeof hint.r === "number" ? hint.r : s.reps;
+  if (weight === "" || !reps) {
     showAlert("Trag erst Gewicht und Wiederholungen ein – oder es gibt keinen Vorschlag zum Übernehmen.");
     return;
   }
+  s.weight = weight;
+  s.reps = reps;
   s.done = true;
   save();
   render();
@@ -2616,8 +2670,15 @@ function isLastOfSuperset(ei) {
   return !(next && next.sgroup === e.sgroup);
 }
 
-function deleteSet(ei, si) {
-  state.active.entries[ei].sets.splice(si, 1);
+// Das ✕ sitzt direkt neben dem ✓ – ohne Rückfrage wäre ein Vertipper im
+// Training sofort ein verlorener Satz.
+async function deleteSet(ei, si) {
+  const entry = state.active.entries[ei];
+  const s = entry.sets[si];
+  if (!s) return;
+  const hasData = s.done || s.weight !== "" || (s.reps !== "" && s.reps != null);
+  if (hasData && !await showConfirm("Diesen Satz löschen?", "Löschen", true)) return;
+  entry.sets.splice(si, 1);
   save();
   render();
 }
@@ -3015,7 +3076,7 @@ function openSettings() {
     ${toggle("autoRest", "Pausentimer automatisch starten", "Startet, sobald du einen Satz abhakst.")}
     ${toggle("sound", "Ton am Ende der Pause", "Kurzer Signalton.")}
     ${toggle("vibrate", "Vibration am Ende der Pause", "Funktioniert nicht auf allen iPhones.")}
-    ${toggle("showRpe", "RPE-Feld anzeigen", "Anstrengung von 5 bis 10 pro Satz. Fließt in die Empfehlung ein.")}
+    ${toggle("showRpe", "RIR-Feld anzeigen", "Wiederholungen in Reserve pro Satz: 0 = keine ging mehr, 5 = locker. Fließt in die Empfehlung ein.")}
   `;
 
   const sheet = openSheet("Einstellungen", html);
@@ -3046,10 +3107,15 @@ function openSettings() {
 async function deleteExerciseFlow(id) {
   const ex = exercise(id);
   if (!ex) return;
-  const used = state.workouts.some(w => w.entries.some(en => en.exerciseId === id));
-  const msg = used
-    ? `„${ex.name}" aus der Auswahl entfernen? Deine gespeicherten Trainings mit dieser Übung bleiben im Verlauf erhalten.`
-    : `„${ex.name}" wirklich löschen?`;
+  const inHistory = state.workouts.some(w => w.entries.some(en => en.exerciseId === id));
+  // Auch das laufende Training zählt – sonst stünde dort plötzlich „Unbekannt"
+  const inActive = !!(state.active && state.active.entries.some(en => en.exerciseId === id));
+  const used = inHistory || inActive;
+  const msg = inActive
+    ? `„${ex.name}" aus der Auswahl entfernen? Im laufenden Training und im Verlauf bleibt sie stehen.`
+    : inHistory
+      ? `„${ex.name}" aus der Auswahl entfernen? Deine gespeicherten Trainings mit dieser Übung bleiben im Verlauf erhalten.`
+      : `„${ex.name}" wirklich löschen?`;
   if (!await showConfirm(msg, "Entfernen", true)) return;
   if (used) {
     // Übung nur ausblenden, damit alte Trainings ihren Namen behalten
@@ -3107,7 +3173,10 @@ function chooseExercise(opts = {}) {
           <button class="opt-del" data-del="${e.id}" title="Übung löschen">✕</button>
         </div>`;
       }).join("");
-      if (q && !state.exercises.some(e => !e.archived && e.name.toLowerCase() === q)) {
+      // Gleicher Name in einer anderen Art (z. B. Kraft vs. Mobility) darf
+      // trotzdem angelegt werden – sonst wäre die Auswahl hier eine Sackgasse
+      if (q && !state.exercises.some(e =>
+            !e.archived && (e.kind || "strength") === kind && e.name.toLowerCase() === q)) {
         html = `<button class="exercise-option create-new" data-create="1">+ „${escapeHtml(search.value.trim())}" neu erstellen</button>` + html;
       }
       list.innerHTML = html || `<div class="empty-state">Tippe oben den Namen ein,<br>um deine erste Übung anzulegen —<br>z. B. „${kind === "mobility" ? "Hüftbeuger dehnen" : "Brustpresse 1"}".</div>`;
@@ -3446,6 +3515,11 @@ document.getElementById("import-input").addEventListener("change", e => {
   e.target.value = "";
   handleImportFile(file);
 });
+
+// Wenn die App in den Hintergrund geht (Bildschirm aus, App gewechselt), sofort
+// schreiben – iOS beendet Web-Apps im Hintergrund gern ohne Vorwarnung
+["pagehide", "visibilitychange"].forEach(ev =>
+  window.addEventListener(ev, () => { if (saveTimer) save(); }));
 
 render(true);
 loadPhotos();
